@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import AdminSidebar from "@/components/admin-sidebar";
+import Header from "@/components/header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { BarChart3, Users, Building, BookOpen, Bell, Settings, Plus, Edit, Trash2, Upload, FileText, Video, ClipboardCheck } from "lucide-react";
+import { BarChart3, Users, Building, BookOpen, Bell, Settings, Plus, Edit, Trash2, Upload, FileText, Video, ClipboardCheck, GraduationCap, UserPlus, Filter, Download, Search } from "lucide-react";
 
 export default function AdminDashboard() {
   const [, navigate] = useLocation();
@@ -39,6 +40,16 @@ export default function AdminDashboard() {
 
   const { data: activeSponsor } = useQuery({
     queryKey: ["/api/sponsors/active"],
+    retry: false,
+  });
+
+  const { data: statistics } = useQuery({
+    queryKey: ["/api/statistics"],
+    retry: false,
+  });
+
+  const { data: trainees } = useQuery({
+    queryKey: ["/api/trainees"],
     retry: false,
   });
 
