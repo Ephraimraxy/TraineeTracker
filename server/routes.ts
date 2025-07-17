@@ -51,13 +51,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/logout', (req, res) => {
+  app.get('/api/admin/logout', (req, res) => {
     const token = req.cookies?.adminToken;
     if (token) {
       destroyAdminSession(token);
       res.clearCookie('adminToken');
     }
-    res.json({ message: "Logout successful" });
+    res.redirect('/');
   });
 
   // Combined auth route that handles Admin Auth only for now
