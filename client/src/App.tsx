@@ -48,17 +48,14 @@ function Router() {
 
   return (
     <Switch>
-      {!isAuthenticated ? (
+      <Route path="/" component={Landing} />
+      <Route path="/register" component={Register} />
+      <Route path="/admin-login" component={AdminLogin} />
+      <Route path="/admin-dashboard" component={AdminDashboard} />
+      {isAuthenticated && (
         <>
-          <Route path="/" component={Landing} />
-          <Route path="/register" component={Register} />
-          <Route path="/admin-login" component={AdminLogin} />
-        </>
-      ) : (
-        <>
-          <Route path="/" component={Home} />
+          <Route path="/home" component={Home} />
           <Route path="/trainee-dashboard" component={TraineeDashboard} />
-          <Route path="/admin-dashboard" component={AdminDashboard} />
         </>
       )}
       <Route component={NotFound} />

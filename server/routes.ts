@@ -27,28 +27,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      // Set secure cookie
+      // Set HTTP-only cookie
       res.cookie('adminToken', sessionToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        sameSite: 'strict'
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
       });
 
-      res.json({ 
-        message: "Login successful", 
-        user: { 
-          id: "admin-default",
-          email: email,
-          firstName: "Admin",
-          lastName: "User",
-          role: "admin"
+      const { verifyAdminSession } = await import('./adminAuth');
+      const adminSession = verifyAdminSession(sessionToken);
+      res.json({
+        message: "Login successful",
+        user: {
+          id: adminSession.userId,
+          email: adminSession.email,
+          role: adminSession.role
         }
       });
     } catch (error) {
       console.error("Admin login error:", error);
       res.status(500).json({ message: "Login failed" });
     }
+  });
+
+  // Admin me route to check current session
+  app.get('/api/admin/me', (req: any, res) => {
+    const token = req.cookies?.adminToken;
+
+    if (!token) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+
+    const { verifyAdminSession } = require('./adminAuth');
+    const session = verifyAdminSession(token);
+    if (!session) {
+      return res.status(401).json({ message: "Session expired" });
+    }
+
+    res.json({
+      id: session.userId,
+      email: session.email,
+      role: session.role
+    });
   });
 
   app.get('/api/admin/logout', (req, res) => {
@@ -415,3 +436,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
   return httpServer;
 }
+import { setDoc, doc, getFirestore } from "firebase/firestore";
+
+const db = getFirestore();

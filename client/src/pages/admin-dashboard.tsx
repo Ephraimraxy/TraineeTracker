@@ -86,8 +86,29 @@ export default function AdminDashboard() {
     },
   });
 
-  if (!user || user.role !== "admin") {
-    navigate("/admin/login");
+  // Check admin authentication via cookie/session instead of Firebase user
+  const { data: adminUser, isLoading: isCheckingAdmin } = useQuery({
+    queryKey: ["/api/admin/me"],
+    queryFn: async () => {
+      try {
+        return await apiRequest("GET", "/api/admin/me");
+      } catch (error: any) {
+        if (error.message?.includes('401')) {
+          navigate("/admin-login");
+          return null;
+        }
+        throw error;
+      }
+    },
+    retry: false
+  });
+
+  if (isCheckingAdmin) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!adminUser) {
+    navigate("/admin-login");
     return null;
   }
 

@@ -28,8 +28,8 @@ export default function AdminLogin() {
         title: "Login Successful",
         description: "Welcome to the admin dashboard!",
       });
-      // Force page refresh to update auth state
-      window.location.href = "/";
+      // Navigate to admin dashboard
+      navigate("/admin-dashboard");
     },
     onError: (error: any) => {
       toast({
