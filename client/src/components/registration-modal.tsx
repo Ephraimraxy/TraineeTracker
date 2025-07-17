@@ -44,7 +44,6 @@ export default function RegistrationModal({ isOpen, onClose }: RegistrationModal
       setCurrentStep(1);
       setIsSubmitting(false);
       setShowEmailVerification(false);
-      form.reset();
     }
   }, [isOpen]);
 
