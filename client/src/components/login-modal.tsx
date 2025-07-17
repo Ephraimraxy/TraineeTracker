@@ -1,22 +1,25 @@
+
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Mail, Lock, LogIn, Shield } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { LogIn, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -24,10 +27,11 @@ interface LoginModalProps {
 }
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof loginSchema>>({
+  const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
@@ -35,35 +39,47 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     },
   });
 
-  const loginMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof loginSchema>) => {
-      // For now, this would be trainee login - we'll implement this later
-      // Currently redirecting to Replit Auth
-      window.location.href = "/api/login";
-    },
-    onError: (error) => {
+  const onSubmit = async (data: LoginFormData) => {
+    setIsLoading(true);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      
+      if (!userCredential.user.emailVerified) {
+        toast({
+          title: "Email not verified",
+          description: "Please verify your email before logging in.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Login successful!",
+        description: "Welcome back to CSS FARMS Training System.",
+      });
+      onClose();
+    } catch (error: any) {
       toast({
         title: "Login failed",
         description: error.message,
         variant: "destructive",
       });
-    },
-  });
-
-  const handleSubmit = (data: z.infer<typeof loginSchema>) => {
-    loginMutation.mutate(data);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center">Login</DialogTitle>
-          <p className="text-center text-gray-600">Welcome back to CSS FARMS Nigeria</p>
+          <DialogTitle className="flex items-center gap-2">
+            <LogIn className="h-5 w-5 text-green-600" />
+            Login to CSS FARMS
+          </DialogTitle>
         </DialogHeader>
-
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="email"
@@ -71,15 +87,13 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 <FormItem>
                   <FormLabel>Email Address</FormLabel>
                   <FormControl>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input className="pl-9" placeholder="Enter your email" {...field} />
-                    </div>
+                    <Input placeholder="john@example.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="password"
@@ -87,15 +101,13 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input className="pl-9" type="password" placeholder="Enter password" {...field} />
-                    </div>
+                    <Input type="password" placeholder="********" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Checkbox 
@@ -112,19 +124,26 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               </a>
             </div>
             
-            <div className="space-y-3">
-              <Button 
-                type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                disabled={loginMutation.isPending}
-              >
-                <LogIn className="mr-2 h-4 w-4" />
-                {loginMutation.isPending ? "Logging in..." : "Login with CSS FARMS"}
-              </Button>
-              
-              <div className="text-center text-sm text-gray-600">
-                <p>This system uses secure authentication</p>
-              </div>
+            <Button 
+              type="submit"
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Logging in...
+                </>
+              ) : (
+                <>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login with CSS FARMS
+                </>
+              )}
+            </Button>
+            
+            <div className="text-center text-sm text-gray-600">
+              <p>This system uses secure authentication</p>
             </div>
           </form>
         </Form>

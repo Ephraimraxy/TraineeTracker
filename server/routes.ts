@@ -16,17 +16,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/admin/login', async (req, res) => {
     try {
       const { email, password } = req.body;
-      
+
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required" });
       }
-      
+
       const sessionToken = await authenticateAdmin(email, password);
-      
+
       if (!sessionToken) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
-      
+
       // Set secure cookie
       res.cookie('adminToken', sessionToken, {
         httpOnly: true,
@@ -34,7 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         sameSite: 'strict'
       });
-      
+
       res.json({ 
         message: "Login successful", 
         user: { 
@@ -60,8 +60,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.redirect('/');
   });
 
+  // User profile creation route for Firebase Auth
+  app.post('/api/users/profile', async (req, res) => {
+    try {
+      const { uid, email, firstName, lastName } = req.body;
+
+      await setDoc(doc(db, 'users', uid), {
+        id: uid,
+        email,
+        firstName,
+        lastName,
+        role: 'trainee',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      res.json({ message: 'User profile created successfully' });
+    } catch (error) {
+      console.error('Error creating user profile:', error);
+      res.status(500).json({ message: 'Failed to create user profile' });
+    }
+  });
+
   // Combined auth route that handles Admin Auth only for now
-  app.get('/api/auth/user', async (req: any, res) => {
+  app.post('/api/auth', async (req, res) => {
     try {
       // Check for admin token first
       const adminToken = req.cookies?.adminToken;
@@ -75,7 +97,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
-      
+
       // For now, return 401 for all non-admin requests
       return res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
@@ -142,12 +164,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = req.params.id;
       const validatedData = insertSponsorSchema.partial().parse(req.body);
-      
+
       // If setting this sponsor as active, deactivate all others first
       if (validatedData.isActive) {
         await storage.deactivateAllSponsors();
       }
-      
+
       const sponsor = await storage.updateSponsor(id, validatedData);
       res.json(sponsor);
     } catch (error) {
@@ -172,13 +194,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sponsorId } = req.query;
       let trainees;
-      
+
       if (sponsorId) {
         trainees = await storage.getTraineesBySponsor(sponsorId as string);
       } else {
         trainees = await storage.getTrainees();
       }
-      
+
       res.json(trainees);
     } catch (error) {
       console.error("Error fetching trainees:", error);
@@ -190,7 +212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/register/step1', async (req, res) => {
     try {
       const { email, password, confirmPassword } = req.body;
-      
+
       if (password !== confirmPassword) {
         return res.status(400).json({ message: "Passwords do not match" });
       }
@@ -215,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send verification email
       const emailSent = await sendVerificationEmail(email, verificationCode);
-      
+
       if (!emailSent) {
         return res.status(500).json({ message: "Failed to send verification email. Please try again." });
       }
@@ -235,28 +257,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/register/verify', async (req, res) => {
     try {
       const { email, code } = req.body;
-      
+
       // Check stored verification codes
       global.verificationCodes = global.verificationCodes || {};
       const storedData = global.verificationCodes[email];
-      
+
       if (!storedData) {
         return res.status(400).json({ message: "No verification code found for this email" });
       }
-      
+
       if (new Date() > storedData.expiry) {
         // Clean up expired code
         delete global.verificationCodes[email];
         return res.status(400).json({ message: "Verification code has expired" });
       }
-      
+
       if (storedData.code !== code) {
         return res.status(400).json({ message: "Invalid verification code" });
       }
-      
+
       // Clean up used code
       delete global.verificationCodes[email];
-      
+
       res.json({ message: "Email verified successfully" });
     } catch (error) {
       console.error("Error in email verification:", error);
@@ -267,7 +289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/register/complete', async (req, res) => {
     try {
       const traineeData = insertTraineeSchema.parse(req.body);
-      
+
       // Get active sponsor
       const activeSponsor = await storage.getActiveSponsor();
       if (!activeSponsor) {
@@ -301,13 +323,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sponsorId } = req.query;
       let content;
-      
+
       if (sponsorId) {
         content = await storage.getContentBySponsor(sponsorId as string);
       } else {
         content = await storage.getContent();
       }
-      
+
       res.json(content);
     } catch (error) {
       console.error("Error fetching content:", error);
@@ -354,13 +376,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { sponsorId } = req.query;
       let announcements;
-      
+
       if (sponsorId) {
         announcements = await storage.getAnnouncementsBySponsor(sponsorId as string);
       } else {
         announcements = await storage.getAnnouncements();
       }
-      
+
       res.json(announcements);
     } catch (error) {
       console.error("Error fetching announcements:", error);
