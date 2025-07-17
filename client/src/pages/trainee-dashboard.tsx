@@ -75,8 +75,8 @@ export default function TraineeDashboard() {
             <Card className="mb-6 card-shadow">
               <CardContent className="p-6">
                 <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-[hsl(var(--primary))] rounded-lg flex items-center justify-center">
-                    <Sprout className="h-8 w-8 text-white" />
+                  <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center p-2">
+                    <img src="/logo.png" alt="CSS FARMS Logo" className="h-full w-auto object-contain" />
                   </div>
                   <div>
                     <h2 className="text-xl font-bold text-gray-800">{sponsor.name}</h2>

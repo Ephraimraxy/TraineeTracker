@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Sprout, LogOut, User } from "lucide-react";
+import { Bell, LogOut, User } from "lucide-react";
 
 export default function Header() {
   const { user } = useAuth();
@@ -29,7 +29,7 @@ export default function Header() {
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Sprout className="h-8 w-8 text-[hsl(var(--primary))]" />
+            <img src="/logo.png" alt="CSS FARMS Logo" className="h-8 w-8" />
             <div>
               <h1 className="text-xl font-bold text-gray-800">CSS FARMS Nigeria</h1>
               <p className="text-sm text-gray-600">
