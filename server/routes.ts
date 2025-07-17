@@ -141,6 +141,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = req.params.id;
       const validatedData = insertSponsorSchema.partial().parse(req.body);
+      
+      // If setting this sponsor as active, deactivate all others first
+      if (validatedData.isActive) {
+        await storage.deactivateAllSponsors();
+      }
+      
       const sponsor = await storage.updateSponsor(id, validatedData);
       res.json(sponsor);
     } catch (error) {

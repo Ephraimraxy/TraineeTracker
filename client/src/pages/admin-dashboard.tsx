@@ -1,60 +1,96 @@
 import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { 
-  Users, 
-  Building, 
-  GraduationCap, 
-  BookOpen,
-  UserPlus,
-  Video,
-  FileText,
-  Plus,
-  Filter,
-  Download,
-  Search
-} from "lucide-react";
-import Header from "@/components/header";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import AdminSidebar from "@/components/admin-sidebar";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { BarChart3, Users, Building, BookOpen, Bell, Settings, Plus, Edit, Trash2, Upload, FileText, Video, ClipboardCheck } from "lucide-react";
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const [, navigate] = useLocation();
   const [activeSection, setActiveSection] = useState("dashboard");
+  const [showRegistrationModal, setShowRegistrationModal] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const { data: statistics } = useQuery({
-    queryKey: ["/api/statistics"],
+  const { data: user } = useQuery({
+    queryKey: ["/api/auth/user"],
+    retry: false,
+  });
+
+  const { data: registrationEnabled } = useQuery({
+    queryKey: ["/api/settings/registration_enabled"],
+    retry: false,
   });
 
   const { data: sponsors } = useQuery({
     queryKey: ["/api/sponsors"],
+    retry: false,
   });
 
-  const { data: trainees } = useQuery({
-    queryKey: ["/api/trainees"],
+  const { data: activeSponsor } = useQuery({
+    queryKey: ["/api/sponsors/active"],
+    retry: false,
   });
 
-  if (user?.role !== "admin") {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md mx-4">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-gray-600">Access denied. Admin privileges required.</p>
-              <Button 
-                onClick={() => window.location.href = "/api/logout"}
-                className="mt-4"
-              >
-                Logout
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  const registrationToggleMutation = useMutation({
+    mutationFn: async (data: { enabled: boolean; sponsorId?: string }) => {
+      // Update registration enabled status
+      await apiRequest("POST", "/api/settings", {
+        key: "registration_enabled",
+        value: data.enabled.toString()
+      });
+
+      // If enabling registration and sponsor is selected, set as active sponsor
+      if (data.enabled && data.sponsorId) {
+        await apiRequest("PATCH", `/api/sponsors/${data.sponsorId}`, {
+          isActive: true
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings/registration_enabled"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sponsors/active"] });
+      toast({
+        title: "Registration Updated",
+        description: "Registration settings have been updated successfully.",
+      });
+      setShowRegistrationModal(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update registration settings.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  if (!user || user.role !== "admin") {
+    navigate("/admin/login");
+    return null;
   }
+
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section);
+  };
+
+  const handleRegistrationToggle = () => {
+    setShowRegistrationModal(true);
+  };
+
+  const handleRegistrationSubmit = (enabled: boolean, sponsorId?: string) => {
+    registrationToggleMutation.mutate({ enabled, sponsorId });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -62,9 +98,10 @@ export default function AdminDashboard() {
 
       <div className="flex">
         <AdminSidebar 
-          activeSection={activeSection}
-          onSectionChange={setActiveSection}
-        />
+        activeSection={activeSection} 
+        onSectionChange={handleSectionChange}
+        onRegistrationToggle={handleRegistrationToggle}
+      />
 
         {/* Main Content */}
         <main className="flex-1 p-6">
@@ -404,6 +441,67 @@ export default function AdminDashboard() {
           )}
         </main>
       </div>
+
+      {/* Registration Toggle Modal */}
+      <Dialog open={showRegistrationModal} onOpenChange={setShowRegistrationModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Toggle Registration</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="registrationStatus">Registration Status</Label>
+              <Select
+                defaultValue={registrationEnabled?.value === 'true' ? 'enabled' : 'disabled'}
+                onValueChange={(value) => {
+                  const enabled = value === 'enabled';
+                  if (enabled && !activeSponsor) {
+                    // If enabling registration, prompt for sponsor selection
+                    return;
+                  }
+                  handleRegistrationSubmit(enabled);
+                }}
+              >
+                <SelectTrigger id="registrationStatus">
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="enabled">Enabled</SelectItem>
+                  <SelectItem value="disabled">Disabled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {registrationEnabled?.value === 'false' && (
+              <div className="space-y-2">
+                <Label htmlFor="sponsorSelect">Select Sponsor</Label>
+                <Select onValueChange={(value) => handleRegistrationSubmit(true, value)}>
+                  <SelectTrigger id="sponsorSelect">
+                    <SelectValue placeholder="Select a Sponsor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sponsors?.map((sponsor) => (
+                      <SelectItem key={sponsor.id} value={sponsor.id}>
+                        {sponsor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button variant="secondary" onClick={() => setShowRegistrationModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => setShowRegistrationModal(false)}>
+              Save
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

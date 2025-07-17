@@ -13,15 +13,17 @@ import {
   MessageSquare,
   FileText,
   Calendar,
-  Shield
+  Shield,
+  UserPlus
 } from "lucide-react";
 
 interface AdminSidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
+  onRegistrationToggle: () => void;
 }
 
-export default function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarProps) {
+export default function AdminSidebar({ activeSection, onSectionChange, onRegistrationToggle }: AdminSidebarProps) {
   const sidebarItems = [
     { 
       id: "dashboard", 
@@ -107,6 +109,16 @@ export default function AdminSidebar({ activeSection, onSectionChange }: AdminSi
           })}
         </div>
       </nav>
+
+      <div className="absolute bottom-16 w-64 p-4 border-t bg-gray-50">
+        <Button
+          onClick={onRegistrationToggle}
+          className="w-full justify-start bg-blue-600 text-white hover:bg-blue-700"
+        >
+          <UserPlus className="h-5 w-5 mr-3" />
+          Toggle Registration
+        </Button>
+      </div>
 
       <div className="absolute bottom-0 w-64 p-4 border-t bg-gray-50">
         <Button

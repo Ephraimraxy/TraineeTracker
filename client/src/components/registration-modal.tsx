@@ -241,7 +241,7 @@ export default function RegistrationModal({ isOpen, onClose }: RegistrationModal
               />
               <Button 
                 type="submit" 
-                className="w-full bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary-dark))]"
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
                 disabled={step1Mutation.isPending}
               >
                 {step1Mutation.isPending ? "Sending..." : "Continue"}
@@ -254,7 +254,7 @@ export default function RegistrationModal({ isOpen, onClose }: RegistrationModal
         {currentStep === 2 && (
           <div className="space-y-4">
             <div className="text-center">
-              <Mail className="h-12 w-12 text-[hsl(var(--primary))] mx-auto mb-4" />
+              <Mail className="h-12 w-12 text-green-600 mx-auto mb-4" />
               <p className="text-gray-600">We've sent a verification code to your email</p>
             </div>
             <Form {...step2Form}>
@@ -279,7 +279,7 @@ export default function RegistrationModal({ isOpen, onClose }: RegistrationModal
                 />
                 <Button 
                   type="submit" 
-                  className="w-full bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary-dark))]"
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
                   disabled={step2Mutation.isPending}
                 >
                   {step2Mutation.isPending ? "Verifying..." : "Verify & Continue"}
@@ -287,10 +287,11 @@ export default function RegistrationModal({ isOpen, onClose }: RegistrationModal
                 <Button 
                   type="button" 
                   variant="outline" 
-                  className="w-full"
+                  className="w-full border-green-600 text-green-600 hover:bg-green-50"
                   onClick={() => step1Mutation.mutate({ email: registrationData.email, password: registrationData.password, confirmPassword: registrationData.password })}
+                  disabled={step1Mutation.isPending}
                 >
-                  Resend Code
+                  {step1Mutation.isPending ? "Resending..." : "Resend Code"}
                 </Button>
               </form>
             </Form>
@@ -473,7 +474,7 @@ export default function RegistrationModal({ isOpen, onClose }: RegistrationModal
               </div>
               <Button 
                 type="submit" 
-                className="w-full bg-[hsl(var(--primary))] hover:bg-[hsl(var(--primary-dark))]"
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
                 disabled={step3Mutation.isPending}
               >
                 {step3Mutation.isPending ? "Completing..." : "Complete Registration"}
