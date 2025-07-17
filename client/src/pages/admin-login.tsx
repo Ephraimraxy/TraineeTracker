@@ -67,7 +67,7 @@ export default function AdminLogin() {
         <CardHeader className="text-center">
           <div className="text-center mb-8">
             <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 border-2 border-green-600">
-              <img src="/logo.png" alt="CSS FARMS Logo" className="h-10 w-auto object-contain" />
+              <img src="https://cssfarms.ng/wp-content/uploads/2024/12/scrnli_QWDQo0eIg5qH8M.png" alt="CSS FARMS Logo" className="h-10 w-auto object-contain" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold text-green-800">Admin Login</CardTitle>

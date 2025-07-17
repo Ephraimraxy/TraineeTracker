@@ -29,7 +29,7 @@ export default function Header() {
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <img src="/logo.png" alt="CSS FARMS Logo" className="h-8 w-auto" />
+            <img src="https://cssfarms.ng/wp-content/uploads/2024/12/scrnli_QWDQo0eIg5qH8M.png" alt="CSS FARMS Logo" className="h-8 w-auto" />
             <div>
               <h1 className="text-xl font-bold text-gray-800">CSS FARMS Nigeria</h1>
               <p className="text-sm text-gray-600">

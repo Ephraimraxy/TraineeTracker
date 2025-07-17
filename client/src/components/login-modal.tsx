@@ -34,7 +34,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 type="email" 
                 className="pl-9" 
                 placeholder="Enter your email"
-                disabled
               />
             </div>
           </div>
@@ -47,13 +46,12 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 type="password" 
                 className="pl-9" 
                 placeholder="Enter password"
-                disabled
               />
             </div>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Checkbox id="remember" disabled />
+              <Checkbox id="remember" />
               <Label htmlFor="remember" className="text-sm text-gray-600">
                 Remember me
               </Label>

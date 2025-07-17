@@ -33,7 +33,7 @@ export default function Landing() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="bg-green-600 p-2 rounded-xl">
-                <img src="/logo.png" alt="CSS FARMS Logo" className="h-8 w-auto" />
+                <img src="https://cssfarms.ng/wp-content/uploads/2024/12/scrnli_QWDQo0eIg5qH8M.png" alt="CSS FARMS Logo" className="h-8 w-auto" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">CSS FARMS Nigeria</h1>
@@ -195,7 +195,7 @@ export default function Landing() {
       <footer className="bg-gray-800 text-white py-8 px-6">
         <div className="container mx-auto text-center">
           <div className="flex items-center justify-center space-x-3 mb-4">
-            <img src="/logo.png" alt="CSS FARMS Logo" className="h-8 w-auto" />
+            <img src="https://cssfarms.ng/wp-content/uploads/2024/12/scrnli_QWDQo0eIg5qH8M.png" alt="CSS FARMS Logo" className="h-8 w-auto" />
             <span className="text-lg font-semibold">CSS FARMS Nigeria</span>
           </div>
           <p className="text-gray-400 text-sm">
