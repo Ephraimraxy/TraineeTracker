@@ -28,8 +28,10 @@ export default function AdminLogin() {
         title: "Login Successful",
         description: "Welcome to the admin dashboard!",
       });
-      // Navigate to admin dashboard
-      navigate("/admin-dashboard");
+      // Small delay to ensure cookie is set before navigation
+      setTimeout(() => {
+        navigate("/admin-dashboard");
+      }, 100);
     },
     onError: (error: any) => {
       toast({

@@ -30,8 +30,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set HTTP-only cookie
       res.cookie('adminToken', sessionToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: 'strict',
+        secure: false, // Set to false for development
+        sameSite: 'lax',
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
       });
 
