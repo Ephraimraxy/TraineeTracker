@@ -1,0 +1,145 @@
+  Trainees Management System
+
+You are to build a complete, user-friendly, automated system for managing the **CSS FARMS Nigeria Trainees Program (use CSS FARMS Nigeria color pattern**. Below are the detailed features and flow of the system: 
+
+---
+
+### 🔵 **1. General Overview**
+
+The platform is designed to manage a nationwide or region-based trainee program under the sponsorship of various organizations. Each sponsor hosts a batch of trainees, and all trainee activities must be tracked, monitored, and accessed according to the sponsor they are assigned to by the admin.
+
+---
+
+### 🔶 **2. Landing Page / Entry Screen**
+
+When a user first accesses the link:
+
+* The interface should display a **professional welcome layout**.
+* Two main buttons should be shown:
+
+  * **Register** (only if admin has enabled registration; otherwise, display “No active registration available.”)
+  * **Login** (for already registered users)
+
+---
+
+### 🔶 **3. Trainee Registration Module**
+
+When registration is active and a new user clicks "Register," the following form fields must be filled: first form to display: Email Address, Password and Confirm Password. Second page: verification code gotten from the user email. Third Page:  
+
+* First name,  surname, middle name. 
+
+* Phone Number
+* Gender (Male / Female / Other)
+* Date of Birth
+* State of Origin
+* Local Government Area
+* Nationality
+
+* Upload Passport Photograph (image file required)
+
+
+* Automatically assigned:
+
+  * Unique Trainee ID
+  * Sponsor Name (display only; not selectable)
+  * Training Tag Number (e.g., FAMS-0081)
+  * Room Number
+  * Lecture Venue (Randomly assigned from: Gold Hall, Silver Hall, White Hall)
+  * Meal Venue (Randomly assigned from: Restaurant 1, 2, or 3)
+
+After submission:
+
+* User should be notified of successful registration.
+* System generates an auto-login option or redirect to login screen.
+
+---
+
+### 🔶 **4. Login & Dashboard Features (Trainee)**
+
+Upon login, the trainee is taken to a **personal dashboard** with the following:
+
+* **Sponsor Details** (name, logo, and description – visible always)
+* Profile Section (Name, ID, Photo, etc.)
+* Room Number
+* Lecture Venue
+* Meal Venue
+* Tag Number
+* Navigation Panel:
+
+  * **Watch Training Videos** (embedded or downloadable per week/module)
+  * **Take Quizzes/Tests** (assigned by admin)
+  * **Submit Assignments or Projects** (uploads or text)
+  * **Announcements** (from admin)
+  * **Progress Status** (quizzes completed, projects submitted, scores)
+  * **Contact Support/Admin**
+
+---
+
+### 🔶 **5. Admin Dashboard Features**
+
+Admin logs in with a separate credential and sees a full control panel, including:
+
+#### **Sponsor Management**
+
+* Add new sponsors (Name, Logo, Description, Start/End Dates, Status)
+* Set sponsor as “Active” (used to tag new registrations)
+* View trainees under each sponsor
+
+#### **Trainee Management**
+
+* View trainees by selecting a sponsor from a dropdown
+* Trainees are listed in a table with:
+
+  * Name, Email, Phone, Tag Number, Room, Lecture Venue, Meal Venue, Registration Date, Status
+* Export to PDF/Excel
+* Edit or deactivate user
+
+#### **Content Upload**
+
+* Upload training videos (and assign to specific sponsor batches)
+* Create and assign quizzes/tests
+* Upload assignments/projects
+* Set due dates and auto-reminders
+
+#### **Registration Settings**
+
+* Enable/Disable trainee registration
+* Set sponsor to assign new trainees
+* Monitor real-time stats on registration count
+
+#### **Messaging and Announcements**
+
+* Send messages to all trainees or by sponsor
+* Post general announcements
+
+---
+
+### 🔶 **6. System Logic & Automation Rules**
+
+* Room, Lecture Venue, Meal Venue should be auto-distributed evenly or randomly.
+* Tag Number is auto-generated and unique per trainee (e.g., "FAMS-0091").
+* No sponsor selection is available to users — it's defined by admin settings.
+* Trainees only see content (videos, quizzes, messages) assigned by the admin to their sponsor’s batch.
+* System must show sponsor name/logo on every screen a trainee interacts with.
+* Registration should close if admin disables it — and the Register button becomes inactive with a clear notice.
+
+---
+
+### 🔶 **7. Access Types & Permissions**
+
+* **Trainees**: Can view only their own dashboard and complete assigned tasks.
+* **Admin**: Full control of users, sponsors, content, system settings.
+* **Optional (Future)**: Sub-admins per region/sponsor.
+
+---
+
+### 🔶 **8. System Expectations**
+
+* All activities (quiz scores, uploads) should be saved and associated with both trainee and sponsor.
+* Sponsor-specific reporting system for admin to analyze participation and results.
+* Email notifications to trainees (optional) for assignments, results, or announcements.
+* Fully responsive design for both mobile and desktop users.
+
+---
+
+
