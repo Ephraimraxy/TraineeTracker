@@ -28,10 +28,10 @@ Preferred communication style: Simple, everyday language.
 - **API Design**: RESTful API with JSON responses
 
 ### Database Design
-- **ORM**: Drizzle ORM with TypeScript schema definitions
-- **Database**: PostgreSQL (configured for Neon Database)
-- **Migrations**: Drizzle Kit for schema migrations
-- **Connection**: Connection pooling with @neondatabase/serverless
+- **Database**: Firebase Firestore (NoSQL document database)
+- **ORM/SDK**: Firebase SDK for JavaScript/TypeScript
+- **Schema**: TypeScript type definitions in shared/schema.ts
+- **Connection**: Firebase Admin SDK with direct Firestore access
 
 ## Key Components
 
@@ -85,8 +85,8 @@ Preferred communication style: Simple, everyday language.
 ## External Dependencies
 
 ### Core Dependencies
-- **@neondatabase/serverless**: PostgreSQL database connection
-- **drizzle-orm**: Database ORM and query builder
+- **firebase**: Firebase SDK for client-side operations
+- **firebase-admin**: Firebase Admin SDK for server-side operations
 - **@tanstack/react-query**: Server state management
 - **express**: Web framework
 - **passport**: Authentication middleware
@@ -102,14 +102,13 @@ Preferred communication style: Simple, everyday language.
 ### Development Dependencies
 - **vite**: Build tool and dev server
 - **typescript**: Type checking
-- **drizzle-kit**: Database migrations
 - **esbuild**: Server-side bundling
 
 ## Deployment Strategy
 
 ### Development Environment
 - **Dev Server**: Vite dev server with HMR
-- **Database**: Development PostgreSQL instance
+- **Database**: Firebase Firestore (development instance)
 - **Build Command**: `npm run dev`
 - **Environment**: NODE_ENV=development
 
@@ -117,11 +116,11 @@ Preferred communication style: Simple, everyday language.
 - **Build Process**: Vite build for client + esbuild for server
 - **Server Bundle**: Single ESM bundle in dist/index.js
 - **Static Assets**: Served from dist/public
-- **Database**: Production PostgreSQL (likely Neon)
-- **Environment Variables**: DATABASE_URL, SESSION_SECRET, REPLIT_DOMAINS
+- **Database**: Firebase Firestore (production instance)
+- **Environment Variables**: SESSION_SECRET, REPLIT_DOMAINS, Firebase Config
 
 ### Key Configuration
-- **Database Config**: Drizzle config pointing to shared/schema.ts
+- **Database Config**: Firebase configuration in server/firebase.ts
 - **Vite Config**: Multi-root setup with client/server separation
 - **TypeScript**: Monorepo structure with shared types
 - **Session Security**: Secure cookies with proper domain configuration

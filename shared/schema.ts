@@ -1,207 +1,166 @@
-import {
-  pgTable,
-  text,
-  varchar,
-  timestamp,
-  jsonb,
-  index,
-  serial,
-  integer,
-  boolean,
-  date,
-} from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Session storage table - mandatory for Replit Auth
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => [index("IDX_session_expire").on(table.expire)],
-);
+// Firestore-based schema types
 
-// User storage table - mandatory for Replit Auth
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().notNull(),
-  email: varchar("email").unique(),
-  firstName: varchar("first_name"),
-  lastName: varchar("last_name"),
-  profileImageUrl: varchar("profile_image_url"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-  role: varchar("role").notNull().default("admin"), // admin or trainee
-});
+// User type - mandatory for Replit Auth
+export type User = {
+  id: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  profileImageUrl?: string;
+  role: "admin" | "trainee";
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-// Sponsors table
-export const sponsors = pgTable("sponsors", {
-  id: serial("id").primaryKey(),
-  name: varchar("name").notNull(),
-  description: text("description"),
-  logoUrl: varchar("logo_url"),
-  startDate: date("start_date"),
-  endDate: date("end_date"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// UpsertUser type for user creation/update
+export type UpsertUser = Omit<User, 'createdAt' | 'updatedAt'>;
 
-// Trainees table
-export const trainees = pgTable("trainees", {
-  id: serial("id").primaryKey(),
-  userId: varchar("user_id").references(() => users.id),
-  traineeId: varchar("trainee_id").unique().notNull(), // Auto-generated unique ID
-  tagNumber: varchar("tag_number").unique().notNull(), // e.g., FAMS-0091
-  firstName: varchar("first_name").notNull(),
-  lastName: varchar("last_name").notNull(),
-  middleName: varchar("middle_name"),
-  email: varchar("email").notNull(),
-  phoneNumber: varchar("phone_number").notNull(),
-  gender: varchar("gender").notNull(),
-  dateOfBirth: date("date_of_birth").notNull(),
-  stateOfOrigin: varchar("state_of_origin").notNull(),
-  localGovernmentArea: varchar("local_government_area").notNull(),
-  nationality: varchar("nationality").notNull().default("Nigerian"),
-  passportPhotoUrl: varchar("passport_photo_url"),
+// Sponsor type
+export type Sponsor = {
+  id: string;
+  name: string;
+  description?: string;
+  logoUrl?: string;
+  startDate?: Date;
+  endDate?: Date;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// Trainee type
+export type Trainee = {
+  id: string;
+  userId?: string;
+  traineeId: string; // Auto-generated unique ID
+  tagNumber: string; // e.g., FAMS-0091
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  email: string;
+  phoneNumber: string;
+  gender: "male" | "female" | "other";
+  dateOfBirth: Date;
+  stateOfOrigin: string;
+  localGovernmentArea: string;
+  nationality: string;
+  passportPhotoUrl?: string;
   
   // Auto-assigned fields
-  sponsorId: integer("sponsor_id").references(() => sponsors.id),
-  roomNumber: varchar("room_number").notNull(),
-  lectureVenue: varchar("lecture_venue").notNull(),
-  mealVenue: varchar("meal_venue").notNull(),
+  sponsorId?: string;
+  roomNumber: string;
+  lectureVenue: string;
+  mealVenue: string;
   
-  isActive: boolean("is_active").default(true),
-  emailVerified: boolean("email_verified").default(false),
-  verificationCode: varchar("verification_code"),
-  verificationCodeExpiry: timestamp("verification_code_expiry"),
+  isActive: boolean;
+  emailVerified: boolean;
+  verificationCode?: string;
+  verificationCodeExpiry?: Date;
   
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+  createdAt: Date;
+  updatedAt: Date;
+};
 
-// Content table for videos, quizzes, assignments
-export const content = pgTable("content", {
-  id: serial("id").primaryKey(),
-  title: varchar("title").notNull(),
-  description: text("description"),
-  type: varchar("type").notNull(), // video, quiz, assignment
-  contentUrl: varchar("content_url"),
-  contentData: jsonb("content_data"), // Store quiz questions, assignment details, etc.
-  sponsorId: integer("sponsor_id").references(() => sponsors.id),
-  dueDate: timestamp("due_date"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// Content type for videos, quizzes, assignments
+export type Content = {
+  id: string;
+  title: string;
+  description?: string;
+  type: "video" | "quiz" | "assignment";
+  contentUrl?: string;
+  contentData?: any; // Store quiz questions, assignment details, etc.
+  sponsorId?: string;
+  dueDate?: Date;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 // Trainee progress tracking
-export const traineeProgress = pgTable("trainee_progress", {
-  id: serial("id").primaryKey(),
-  traineeId: integer("trainee_id").references(() => trainees.id),
-  contentId: integer("content_id").references(() => content.id),
-  status: varchar("status").notNull().default("not_started"), // not_started, in_progress, completed
-  score: integer("score"),
-  submissionUrl: varchar("submission_url"),
-  submissionData: jsonb("submission_data"),
-  completedAt: timestamp("completed_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+export type TraineeProgress = {
+  id: string;
+  traineeId: string;
+  contentId: string;
+  status: "not_started" | "in_progress" | "completed";
+  score?: number;
+  submissionUrl?: string;
+  submissionData?: any;
+  completedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// Announcements type
+export type Announcement = {
+  id: string;
+  title: string;
+  message: string;
+  sponsorId?: string; // null for global announcements
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// System settings type
+export type SystemSetting = {
+  id: string;
+  key: string;
+  value: string;
+  updatedAt: Date;
+};
+
+// Zod schemas for validation
+export const insertSponsorSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  logoUrl: z.string().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+  isActive: z.boolean().default(true),
 });
 
-// Announcements table
-export const announcements = pgTable("announcements", {
-  id: serial("id").primaryKey(),
-  title: varchar("title").notNull(),
-  message: text("message").notNull(),
-  sponsorId: integer("sponsor_id").references(() => sponsors.id), // null for global announcements
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+export const insertTraineeSchema = z.object({
+  userId: z.string().optional(),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  middleName: z.string().optional(),
+  email: z.string().email("Invalid email address"),
+  phoneNumber: z.string().min(10, "Phone number is required"),
+  gender: z.enum(["male", "female", "other"]),
+  dateOfBirth: z.date(),
+  stateOfOrigin: z.string().min(1, "State of origin is required"),
+  localGovernmentArea: z.string().min(1, "Local government area is required"),
+  nationality: z.string().default("Nigerian"),
+  passportPhotoUrl: z.string().optional(),
+  sponsorId: z.string().optional(),
+  isActive: z.boolean().default(true),
+  emailVerified: z.boolean().default(false),
+  verificationCode: z.string().optional(),
+  verificationCodeExpiry: z.date().optional(),
 });
 
-// System settings table
-export const systemSettings = pgTable("system_settings", {
-  id: serial("id").primaryKey(),
-  key: varchar("key").unique().notNull(),
-  value: text("value").notNull(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+export const insertContentSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  type: z.enum(["video", "quiz", "assignment"]),
+  contentUrl: z.string().optional(),
+  contentData: z.any().optional(),
+  sponsorId: z.string().optional(),
+  dueDate: z.date().optional(),
+  isActive: z.boolean().default(true),
 });
 
-// Relations
-export const usersRelations = relations(users, ({ one }) => ({
-  trainee: one(trainees, { fields: [users.id], references: [trainees.userId] }),
-}));
-
-export const sponsorsRelations = relations(sponsors, ({ many }) => ({
-  trainees: many(trainees),
-  content: many(content),
-  announcements: many(announcements),
-}));
-
-export const traineesRelations = relations(trainees, ({ one, many }) => ({
-  user: one(users, { fields: [trainees.userId], references: [users.id] }),
-  sponsor: one(sponsors, { fields: [trainees.sponsorId], references: [sponsors.id] }),
-  progress: many(traineeProgress),
-}));
-
-export const contentRelations = relations(content, ({ one, many }) => ({
-  sponsor: one(sponsors, { fields: [content.sponsorId], references: [sponsors.id] }),
-  progress: many(traineeProgress),
-}));
-
-export const traineeProgressRelations = relations(traineeProgress, ({ one }) => ({
-  trainee: one(trainees, { fields: [traineeProgress.traineeId], references: [trainees.id] }),
-  content: one(content, { fields: [traineeProgress.contentId], references: [content.id] }),
-}));
-
-export const announcementsRelations = relations(announcements, ({ one }) => ({
-  sponsor: one(sponsors, { fields: [announcements.sponsorId], references: [sponsors.id] }),
-}));
-
-// Insert schemas
-export const insertSponsorSchema = createInsertSchema(sponsors).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertTraineeSchema = createInsertSchema(trainees).omit({
-  id: true,
-  traineeId: true,
-  tagNumber: true,
-  roomNumber: true,
-  lectureVenue: true,
-  mealVenue: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertContentSchema = createInsertSchema(content).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
-export const insertAnnouncementSchema = createInsertSchema(announcements).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertAnnouncementSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  message: z.string().min(1, "Message is required"),
+  sponsorId: z.string().optional(),
+  isActive: z.boolean().default(true),
 });
 
 // Types
-export type UpsertUser = typeof users.$inferInsert;
-export type User = typeof users.$inferSelect;
-export type Sponsor = typeof sponsors.$inferSelect;
 export type InsertSponsor = z.infer<typeof insertSponsorSchema>;
-export type Trainee = typeof trainees.$inferSelect;
 export type InsertTrainee = z.infer<typeof insertTraineeSchema>;
-export type Content = typeof content.$inferSelect;
 export type InsertContent = z.infer<typeof insertContentSchema>;
-export type TraineeProgress = typeof traineeProgress.$inferSelect;
-export type Announcement = typeof announcements.$inferSelect;
 export type InsertAnnouncement = z.infer<typeof insertAnnouncementSchema>;
-export type SystemSetting = typeof systemSettings.$inferSelect;

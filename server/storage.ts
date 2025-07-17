@@ -1,11 +1,4 @@
 import {
-  users,
-  sponsors,
-  trainees,
-  content,
-  traineeProgress,
-  announcements,
-  systemSettings,
   type User,
   type UpsertUser,
   type Sponsor,
@@ -19,8 +12,22 @@ import {
   type InsertAnnouncement,
   type SystemSetting,
 } from "@shared/schema";
-import { db } from "./db";
-import { eq, and, desc, count } from "drizzle-orm";
+import { db } from "./firebase";
+import { 
+  collection, 
+  doc, 
+  getDoc, 
+  getDocs, 
+  addDoc, 
+  updateDoc, 
+  setDoc,
+  query, 
+  where, 
+  orderBy, 
+  limit,
+  deleteDoc,
+  Timestamp
+} from "firebase/firestore";
 
 export interface IStorage {
   // User operations - mandatory for Replit Auth
@@ -29,34 +36,34 @@ export interface IStorage {
   
   // Sponsor operations
   getSponsors(): Promise<Sponsor[]>;
-  getSponsor(id: number): Promise<Sponsor | undefined>;
+  getSponsor(id: string): Promise<Sponsor | undefined>;
   createSponsor(sponsor: InsertSponsor): Promise<Sponsor>;
-  updateSponsor(id: number, sponsor: Partial<InsertSponsor>): Promise<Sponsor>;
+  updateSponsor(id: string, sponsor: Partial<InsertSponsor>): Promise<Sponsor>;
   getActiveSponsor(): Promise<Sponsor | undefined>;
   
   // Trainee operations
   getTrainees(): Promise<Trainee[]>;
-  getTraineesBySponsor(sponsorId: number): Promise<Trainee[]>;
-  getTrainee(id: number): Promise<Trainee | undefined>;
+  getTraineesBySponsor(sponsorId: string): Promise<Trainee[]>;
+  getTrainee(id: string): Promise<Trainee | undefined>;
   getTraineeByEmail(email: string): Promise<Trainee | undefined>;
   getTraineeByUserId(userId: string): Promise<Trainee | undefined>;
   createTrainee(trainee: InsertTrainee): Promise<Trainee>;
-  updateTrainee(id: number, trainee: Partial<InsertTrainee>): Promise<Trainee>;
+  updateTrainee(id: string, trainee: Partial<InsertTrainee>): Promise<Trainee>;
   verifyTraineeEmail(email: string, code: string): Promise<boolean>;
   
   // Content operations
   getContent(): Promise<Content[]>;
-  getContentBySponsor(sponsorId: number): Promise<Content[]>;
+  getContentBySponsor(sponsorId: string): Promise<Content[]>;
   createContent(content: InsertContent): Promise<Content>;
-  updateContent(id: number, content: Partial<InsertContent>): Promise<Content>;
+  updateContent(id: string, content: Partial<InsertContent>): Promise<Content>;
   
   // Progress operations
-  getTraineeProgress(traineeId: number): Promise<TraineeProgress[]>;
-  updateProgress(traineeId: number, contentId: number, progress: Partial<TraineeProgress>): Promise<TraineeProgress>;
+  getTraineeProgress(traineeId: string): Promise<TraineeProgress[]>;
+  updateProgress(traineeId: string, contentId: string, progress: Partial<TraineeProgress>): Promise<TraineeProgress>;
   
   // Announcement operations
   getAnnouncements(): Promise<Announcement[]>;
-  getAnnouncementsBySponsor(sponsorId: number): Promise<Announcement[]>;
+  getAnnouncementsBySponsor(sponsorId: string): Promise<Announcement[]>;
   createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement>;
   
   // System settings
@@ -73,93 +80,168 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Helper function to convert Firestore timestamps to Date objects
+  private convertTimestamps(data: any): any {
+    if (!data) return data;
+    
+    const converted = { ...data };
+    for (const key in converted) {
+      if (converted[key] instanceof Timestamp) {
+        converted[key] = converted[key].toDate();
+      }
+    }
+    return converted;
+  }
+
   // User operations
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    const userDoc = await getDoc(doc(db, 'users', id));
+    if (userDoc.exists()) {
+      return this.convertTimestamps({ id: userDoc.id, ...userDoc.data() }) as User;
+    }
+    return undefined;
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
+    const userRef = doc(db, 'users', userData.id);
+    const userDoc = await getDoc(userRef);
+    
+    const now = new Date();
+    const userToSave = {
+      ...userData,
+      updatedAt: now,
+      createdAt: userDoc.exists() ? userDoc.data()?.createdAt : now,
+    };
+
+    if (userDoc.exists()) {
+      await updateDoc(userRef, userToSave);
+    } else {
+      await setDoc(userRef, userToSave);
+    }
+    return userToSave as User;
   }
 
   // Sponsor operations
   async getSponsors(): Promise<Sponsor[]> {
-    return await db.select().from(sponsors).orderBy(desc(sponsors.createdAt));
+    const sponsorsQuery = query(
+      collection(db, 'sponsors'),
+      orderBy('createdAt', 'desc')
+    );
+    const snapshot = await getDocs(sponsorsQuery);
+    return snapshot.docs.map(doc => 
+      this.convertTimestamps({ id: doc.id, ...doc.data() }) as Sponsor
+    );
   }
 
-  async getSponsor(id: number): Promise<Sponsor | undefined> {
-    const [sponsor] = await db.select().from(sponsors).where(eq(sponsors.id, id));
-    return sponsor;
+  async getSponsor(id: string): Promise<Sponsor | undefined> {
+    const sponsorDoc = await getDoc(doc(db, 'sponsors', id));
+    if (sponsorDoc.exists()) {
+      return this.convertTimestamps({ id: sponsorDoc.id, ...sponsorDoc.data() }) as Sponsor;
+    }
+    return undefined;
   }
 
   async createSponsor(sponsor: InsertSponsor): Promise<Sponsor> {
-    const [newSponsor] = await db.insert(sponsors).values(sponsor).returning();
-    return newSponsor;
+    const now = new Date();
+    const sponsorData = {
+      ...sponsor,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    const docRef = await addDoc(collection(db, 'sponsors'), sponsorData);
+    return { id: docRef.id, ...sponsorData } as Sponsor;
   }
 
-  async updateSponsor(id: number, sponsor: Partial<InsertSponsor>): Promise<Sponsor> {
-    const [updatedSponsor] = await db
-      .update(sponsors)
-      .set({ ...sponsor, updatedAt: new Date() })
-      .where(eq(sponsors.id, id))
-      .returning();
-    return updatedSponsor;
+  async updateSponsor(id: string, sponsor: Partial<InsertSponsor>): Promise<Sponsor> {
+    const sponsorRef = doc(db, 'sponsors', id);
+    const updateData = {
+      ...sponsor,
+      updatedAt: new Date(),
+    };
+    
+    await updateDoc(sponsorRef, updateData);
+    const updatedDoc = await getDoc(sponsorRef);
+    return this.convertTimestamps({ id: updatedDoc.id, ...updatedDoc.data() }) as Sponsor;
   }
 
   async getActiveSponsor(): Promise<Sponsor | undefined> {
-    const [sponsor] = await db
-      .select()
-      .from(sponsors)
-      .where(eq(sponsors.isActive, true))
-      .orderBy(desc(sponsors.createdAt))
-      .limit(1);
-    return sponsor;
+    const sponsorsQuery = query(
+      collection(db, 'sponsors'),
+      where('isActive', '==', true),
+      limit(1)
+    );
+    const snapshot = await getDocs(sponsorsQuery);
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      return this.convertTimestamps({ id: doc.id, ...doc.data() }) as Sponsor;
+    }
+    return undefined;
   }
 
   // Trainee operations
   async getTrainees(): Promise<Trainee[]> {
-    return await db.select().from(trainees).orderBy(desc(trainees.createdAt));
+    const traineesQuery = query(
+      collection(db, 'trainees'),
+      orderBy('createdAt', 'desc')
+    );
+    const snapshot = await getDocs(traineesQuery);
+    return snapshot.docs.map(doc => 
+      this.convertTimestamps({ id: doc.id, ...doc.data() }) as Trainee
+    );
   }
 
-  async getTraineesBySponsor(sponsorId: number): Promise<Trainee[]> {
-    return await db
-      .select()
-      .from(trainees)
-      .where(eq(trainees.sponsorId, sponsorId))
-      .orderBy(desc(trainees.createdAt));
+  async getTraineesBySponsor(sponsorId: string): Promise<Trainee[]> {
+    const traineesQuery = query(
+      collection(db, 'trainees'),
+      where('sponsorId', '==', sponsorId)
+    );
+    const snapshot = await getDocs(traineesQuery);
+    return snapshot.docs.map(doc => 
+      this.convertTimestamps({ id: doc.id, ...doc.data() }) as Trainee
+    );
   }
 
-  async getTrainee(id: number): Promise<Trainee | undefined> {
-    const [trainee] = await db.select().from(trainees).where(eq(trainees.id, id));
-    return trainee;
+  async getTrainee(id: string): Promise<Trainee | undefined> {
+    const traineeDoc = await getDoc(doc(db, 'trainees', id));
+    if (traineeDoc.exists()) {
+      return this.convertTimestamps({ id: traineeDoc.id, ...traineeDoc.data() }) as Trainee;
+    }
+    return undefined;
   }
 
   async getTraineeByEmail(email: string): Promise<Trainee | undefined> {
-    const [trainee] = await db.select().from(trainees).where(eq(trainees.email, email));
-    return trainee;
+    const traineesQuery = query(
+      collection(db, 'trainees'),
+      where('email', '==', email),
+      limit(1)
+    );
+    const snapshot = await getDocs(traineesQuery);
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      return this.convertTimestamps({ id: doc.id, ...doc.data() }) as Trainee;
+    }
+    return undefined;
   }
 
   async getTraineeByUserId(userId: string): Promise<Trainee | undefined> {
-    const [trainee] = await db.select().from(trainees).where(eq(trainees.userId, userId));
-    return trainee;
+    const traineesQuery = query(
+      collection(db, 'trainees'),
+      where('userId', '==', userId),
+      limit(1)
+    );
+    const snapshot = await getDocs(traineesQuery);
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      return this.convertTimestamps({ id: doc.id, ...doc.data() }) as Trainee;
+    }
+    return undefined;
   }
 
   async createTrainee(trainee: InsertTrainee): Promise<Trainee> {
     // Generate unique trainee ID and tag number
-    const traineeCount = await db.select({ count: count() }).from(trainees);
-    const nextNumber = (traineeCount[0]?.count || 0) + 1;
+    const traineesSnapshot = await getDocs(collection(db, 'trainees'));
+    const nextNumber = traineesSnapshot.size + 1;
     const paddedNumber = nextNumber.toString().padStart(4, '0');
     
     // Auto-assign venues and room
@@ -172,6 +254,7 @@ export class DatabaseStorage implements IStorage {
     const mealVenue = venues.meal[Math.floor(Math.random() * venues.meal.length)];
     const roomNumber = (100 + Math.floor(Math.random() * 300)).toString();
     
+    const now = new Date();
     const traineeData = {
       ...trainee,
       traineeId: `TRAINEE-${paddedNumber}`,
@@ -179,152 +262,203 @@ export class DatabaseStorage implements IStorage {
       roomNumber,
       lectureVenue,
       mealVenue,
+      createdAt: now,
+      updatedAt: now,
     };
 
-    const [newTrainee] = await db.insert(trainees).values(traineeData).returning();
-    return newTrainee;
+    const docRef = await addDoc(collection(db, 'trainees'), traineeData);
+    return { id: docRef.id, ...traineeData } as Trainee;
   }
 
-  async updateTrainee(id: number, trainee: Partial<InsertTrainee>): Promise<Trainee> {
-    const [updatedTrainee] = await db
-      .update(trainees)
-      .set({ ...trainee, updatedAt: new Date() })
-      .where(eq(trainees.id, id))
-      .returning();
-    return updatedTrainee;
+  async updateTrainee(id: string, trainee: Partial<InsertTrainee>): Promise<Trainee> {
+    const traineeRef = doc(db, 'trainees', id);
+    const updateData = {
+      ...trainee,
+      updatedAt: new Date(),
+    };
+    
+    await updateDoc(traineeRef, updateData);
+    const updatedDoc = await getDoc(traineeRef);
+    return this.convertTimestamps({ id: updatedDoc.id, ...updatedDoc.data() }) as Trainee;
   }
 
   async verifyTraineeEmail(email: string, code: string): Promise<boolean> {
-    const [trainee] = await db
-      .select()
-      .from(trainees)
-      .where(
-        and(
-          eq(trainees.email, email),
-          eq(trainees.verificationCode, code)
-        )
-      );
-
-    if (trainee && trainee.verificationCodeExpiry && trainee.verificationCodeExpiry > new Date()) {
-      await db
-        .update(trainees)
-        .set({
+    const traineesQuery = query(
+      collection(db, 'trainees'),
+      where('email', '==', email),
+      where('verificationCode', '==', code),
+      limit(1)
+    );
+    const snapshot = await getDocs(traineesQuery);
+    
+    if (!snapshot.empty) {
+      const traineeDoc = snapshot.docs[0];
+      const traineeData = traineeDoc.data();
+      
+      if (traineeData.verificationCodeExpiry && traineeData.verificationCodeExpiry.toDate() > new Date()) {
+        await updateDoc(traineeDoc.ref, {
           emailVerified: true,
           verificationCode: null,
           verificationCodeExpiry: null,
           updatedAt: new Date(),
-        })
-        .where(eq(trainees.id, trainee.id));
-      return true;
+        });
+        return true;
+      }
     }
     return false;
   }
 
   // Content operations
   async getContent(): Promise<Content[]> {
-    return await db.select().from(content).orderBy(desc(content.createdAt));
+    const contentQuery = query(
+      collection(db, 'content'),
+      orderBy('createdAt', 'desc')
+    );
+    const snapshot = await getDocs(contentQuery);
+    return snapshot.docs.map(doc => 
+      this.convertTimestamps({ id: doc.id, ...doc.data() }) as Content
+    );
   }
 
-  async getContentBySponsor(sponsorId: number): Promise<Content[]> {
-    return await db
-      .select()
-      .from(content)
-      .where(eq(content.sponsorId, sponsorId))
-      .orderBy(desc(content.createdAt));
+  async getContentBySponsor(sponsorId: string): Promise<Content[]> {
+    const contentQuery = query(
+      collection(db, 'content'),
+      where('sponsorId', '==', sponsorId)
+    );
+    const snapshot = await getDocs(contentQuery);
+    return snapshot.docs.map(doc => 
+      this.convertTimestamps({ id: doc.id, ...doc.data() }) as Content
+    );
   }
 
   async createContent(contentData: InsertContent): Promise<Content> {
-    const [newContent] = await db.insert(content).values(contentData).returning();
-    return newContent;
+    const now = new Date();
+    const content = {
+      ...contentData,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    const docRef = await addDoc(collection(db, 'content'), content);
+    return { id: docRef.id, ...content } as Content;
   }
 
-  async updateContent(id: number, contentData: Partial<InsertContent>): Promise<Content> {
-    const [updatedContent] = await db
-      .update(content)
-      .set({ ...contentData, updatedAt: new Date() })
-      .where(eq(content.id, id))
-      .returning();
-    return updatedContent;
+  async updateContent(id: string, contentData: Partial<InsertContent>): Promise<Content> {
+    const contentRef = doc(db, 'content', id);
+    const updateData = {
+      ...contentData,
+      updatedAt: new Date(),
+    };
+    
+    await updateDoc(contentRef, updateData);
+    const updatedDoc = await getDoc(contentRef);
+    return this.convertTimestamps({ id: updatedDoc.id, ...updatedDoc.data() }) as Content;
   }
 
   // Progress operations
-  async getTraineeProgress(traineeId: number): Promise<TraineeProgress[]> {
-    return await db
-      .select()
-      .from(traineeProgress)
-      .where(eq(traineeProgress.traineeId, traineeId))
-      .orderBy(desc(traineeProgress.createdAt));
+  async getTraineeProgress(traineeId: string): Promise<TraineeProgress[]> {
+    const progressQuery = query(
+      collection(db, 'traineeProgress'),
+      where('traineeId', '==', traineeId)
+    );
+    const snapshot = await getDocs(progressQuery);
+    return snapshot.docs.map(doc => 
+      this.convertTimestamps({ id: doc.id, ...doc.data() }) as TraineeProgress
+    );
   }
 
   async updateProgress(
-    traineeId: number,
-    contentId: number,
+    traineeId: string,
+    contentId: string,
     progress: Partial<TraineeProgress>
   ): Promise<TraineeProgress> {
-    const [existing] = await db
-      .select()
-      .from(traineeProgress)
-      .where(
-        and(
-          eq(traineeProgress.traineeId, traineeId),
-          eq(traineeProgress.contentId, contentId)
-        )
-      );
-
-    if (existing) {
-      const [updated] = await db
-        .update(traineeProgress)
-        .set({ ...progress, updatedAt: new Date() })
-        .where(eq(traineeProgress.id, existing.id))
-        .returning();
-      return updated;
+    const progressQuery = query(
+      collection(db, 'traineeProgress'),
+      where('traineeId', '==', traineeId),
+      where('contentId', '==', contentId),
+      limit(1)
+    );
+    const snapshot = await getDocs(progressQuery);
+    
+    if (!snapshot.empty) {
+      const existingDoc = snapshot.docs[0];
+      const updateData = {
+        ...progress,
+        updatedAt: new Date(),
+      };
+      
+      await updateDoc(existingDoc.ref, updateData);
+      const updatedDoc = await getDoc(existingDoc.ref);
+      return this.convertTimestamps({ id: updatedDoc.id, ...updatedDoc.data() }) as TraineeProgress;
     } else {
-      const [newProgress] = await db
-        .insert(traineeProgress)
-        .values({
-          traineeId,
-          contentId,
-          ...progress,
-        })
-        .returning();
-      return newProgress;
+      const now = new Date();
+      const progressData = {
+        traineeId,
+        contentId,
+        ...progress,
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      const docRef = await addDoc(collection(db, 'traineeProgress'), progressData);
+      return { id: docRef.id, ...progressData } as TraineeProgress;
     }
   }
 
   // Announcement operations
   async getAnnouncements(): Promise<Announcement[]> {
-    return await db.select().from(announcements).orderBy(desc(announcements.createdAt));
+    const announcementsQuery = query(
+      collection(db, 'announcements'),
+      orderBy('createdAt', 'desc')
+    );
+    const snapshot = await getDocs(announcementsQuery);
+    return snapshot.docs.map(doc => 
+      this.convertTimestamps({ id: doc.id, ...doc.data() }) as Announcement
+    );
   }
 
-  async getAnnouncementsBySponsor(sponsorId: number): Promise<Announcement[]> {
-    return await db
-      .select()
-      .from(announcements)
-      .where(eq(announcements.sponsorId, sponsorId))
-      .orderBy(desc(announcements.createdAt));
+  async getAnnouncementsBySponsor(sponsorId: string): Promise<Announcement[]> {
+    const announcementsQuery = query(
+      collection(db, 'announcements'),
+      where('sponsorId', '==', sponsorId)
+    );
+    const snapshot = await getDocs(announcementsQuery);
+    return snapshot.docs.map(doc => 
+      this.convertTimestamps({ id: doc.id, ...doc.data() }) as Announcement
+    );
   }
 
   async createAnnouncement(announcement: InsertAnnouncement): Promise<Announcement> {
-    const [newAnnouncement] = await db.insert(announcements).values(announcement).returning();
-    return newAnnouncement;
+    const now = new Date();
+    const announcementData = {
+      ...announcement,
+      createdAt: now,
+      updatedAt: now,
+    };
+    
+    const docRef = await addDoc(collection(db, 'announcements'), announcementData);
+    return { id: docRef.id, ...announcementData } as Announcement;
   }
 
   // System settings
   async getSystemSetting(key: string): Promise<SystemSetting | undefined> {
-    const [setting] = await db.select().from(systemSettings).where(eq(systemSettings.key, key));
-    return setting;
+    const settingDoc = await getDoc(doc(db, 'systemSettings', key));
+    if (settingDoc.exists()) {
+      return this.convertTimestamps({ id: settingDoc.id, ...settingDoc.data() }) as SystemSetting;
+    }
+    return undefined;
   }
 
   async updateSystemSetting(key: string, value: string): Promise<SystemSetting> {
-    const [setting] = await db
-      .insert(systemSettings)
-      .values({ key, value })
-      .onConflictDoUpdate({
-        target: systemSettings.key,
-        set: { value, updatedAt: new Date() },
-      })
-      .returning();
-    return setting;
+    const settingRef = doc(db, 'systemSettings', key);
+    const settingData = {
+      key,
+      value,
+      updatedAt: new Date(),
+    };
+    
+    await setDoc(settingRef, settingData);
+    return { id: key, ...settingData } as SystemSetting;
   }
 
   // Statistics
@@ -334,25 +468,18 @@ export class DatabaseStorage implements IStorage {
     completedCourses: number;
     activeContent: number;
   }> {
-    const [totalTrainees] = await db.select({ count: count() }).from(trainees);
-    const [activeSponsors] = await db
-      .select({ count: count() })
-      .from(sponsors)
-      .where(eq(sponsors.isActive, true));
-    const [completedCourses] = await db
-      .select({ count: count() })
-      .from(traineeProgress)
-      .where(eq(traineeProgress.status, 'completed'));
-    const [activeContent] = await db
-      .select({ count: count() })
-      .from(content)
-      .where(eq(content.isActive, true));
+    const [traineesSnapshot, sponsorsSnapshot, progressSnapshot, contentSnapshot] = await Promise.all([
+      getDocs(collection(db, 'trainees')),
+      getDocs(query(collection(db, 'sponsors'), where('isActive', '==', true))),
+      getDocs(query(collection(db, 'traineeProgress'), where('status', '==', 'completed'))),
+      getDocs(query(collection(db, 'content'), where('isActive', '==', true))),
+    ]);
 
     return {
-      totalTrainees: totalTrainees?.count || 0,
-      activeSponsors: activeSponsors?.count || 0,
-      completedCourses: completedCourses?.count || 0,
-      activeContent: activeContent?.count || 0,
+      totalTrainees: traineesSnapshot.size,
+      activeSponsors: sponsorsSnapshot.size,
+      completedCourses: progressSnapshot.size,
+      activeContent: contentSnapshot.size,
     };
   }
 }

@@ -91,7 +91,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/sponsors/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = req.params.id;
       const validatedData = insertSponsorSchema.partial().parse(req.body);
       const sponsor = await storage.updateSponsor(id, validatedData);
       res.json(sponsor);
@@ -108,7 +108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let trainees;
       
       if (sponsorId) {
-        trainees = await storage.getTraineesBySponsor(parseInt(sponsorId as string));
+        trainees = await storage.getTraineesBySponsor(sponsorId as string);
       } else {
         trainees = await storage.getTrainees();
       }
@@ -210,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let content;
       
       if (sponsorId) {
-        content = await storage.getContentBySponsor(parseInt(sponsorId as string));
+        content = await storage.getContentBySponsor(sponsorId as string);
       } else {
         content = await storage.getContent();
       }
@@ -236,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Progress routes
   app.get('/api/progress/:traineeId', isAuthenticated, async (req, res) => {
     try {
-      const traineeId = parseInt(req.params.traineeId);
+      const traineeId = req.params.traineeId;
       const progress = await storage.getTraineeProgress(traineeId);
       res.json(progress);
     } catch (error) {
@@ -263,7 +263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let announcements;
       
       if (sponsorId) {
-        announcements = await storage.getAnnouncementsBySponsor(parseInt(sponsorId as string));
+        announcements = await storage.getAnnouncementsBySponsor(sponsorId as string);
       } else {
         announcements = await storage.getAnnouncements();
       }
