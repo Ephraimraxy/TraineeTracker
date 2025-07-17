@@ -1,15 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+// import { setupAuth, isAdminAuthenticated } from "./replitAuth";
 import { authenticateAdmin, isAdminAuthenticated, destroyAdminSession } from "./adminAuth";
 import { insertSponsorSchema, insertTraineeSchema, insertContentSchema, insertAnnouncementSchema } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+  // Auth middleware disabled for now since we're using Firebase and admin auth
+  // await setupAuth(app);
 
   // Admin authentication routes
   app.post('/api/admin/login', async (req, res) => {
@@ -59,7 +59,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ message: "Logout successful" });
   });
 
-  // Combined auth route that handles both Replit Auth and Admin Auth
+  // Combined auth route that handles Admin Auth only for now
   app.get('/api/auth/user', async (req: any, res) => {
     try {
       // Check for admin token first
@@ -74,27 +74,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Fall back to Replit Auth
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // If user is trainee, get trainee data
-      if (user.role === 'trainee') {
-        const trainee = await storage.getTraineeByUserId(userId);
-        if (trainee) {
-          const sponsor = trainee.sponsorId ? await storage.getSponsor(trainee.sponsorId) : null;
-          return res.json({ ...user, trainee, sponsor });
-        }
-      }
-      
-      res.json(user);
+      // For now, return 401 for all non-admin requests
+      return res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -112,7 +93,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/settings', isAuthenticated, async (req: any, res) => {
+  app.post('/api/settings', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { key, value } = req.body;
       const setting = await storage.updateSystemSetting(key, value);
@@ -124,7 +105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Sponsor routes
-  app.get('/api/sponsors', isAuthenticated, async (req, res) => {
+  app.get('/api/sponsors', isAdminAuthenticated, async (req, res) => {
     try {
       const sponsors = await storage.getSponsors();
       res.json(sponsors);
@@ -144,7 +125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/sponsors', isAuthenticated, async (req: any, res) => {
+  app.post('/api/sponsors', isAdminAuthenticated, async (req: any, res) => {
     try {
       const validatedData = insertSponsorSchema.parse(req.body);
       const sponsor = await storage.createSponsor(validatedData);
@@ -155,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/sponsors/:id', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/sponsors/:id', isAdminAuthenticated, async (req: any, res) => {
     try {
       const id = req.params.id;
       const validatedData = insertSponsorSchema.partial().parse(req.body);
@@ -168,7 +149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Trainee routes
-  app.get('/api/trainees', isAuthenticated, async (req, res) => {
+  app.get('/api/trainees', isAdminAuthenticated, async (req, res) => {
     try {
       const { sponsorId } = req.query;
       let trainees;
@@ -270,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Content routes
-  app.get('/api/content', isAuthenticated, async (req, res) => {
+  app.get('/api/content', isAdminAuthenticated, async (req, res) => {
     try {
       const { sponsorId } = req.query;
       let content;
@@ -288,7 +269,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/content', isAuthenticated, async (req: any, res) => {
+  app.post('/api/content', isAdminAuthenticated, async (req: any, res) => {
     try {
       const validatedData = insertContentSchema.parse(req.body);
       const content = await storage.createContent(validatedData);
@@ -300,7 +281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Progress routes
-  app.get('/api/progress/:traineeId', isAuthenticated, async (req, res) => {
+  app.get('/api/progress/:traineeId', isAdminAuthenticated, async (req, res) => {
     try {
       const traineeId = req.params.traineeId;
       const progress = await storage.getTraineeProgress(traineeId);
@@ -311,7 +292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/progress', isAuthenticated, async (req: any, res) => {
+  app.post('/api/progress', isAdminAuthenticated, async (req: any, res) => {
     try {
       const { traineeId, contentId, ...progressData } = req.body;
       const progress = await storage.updateProgress(traineeId, contentId, progressData);
@@ -323,7 +304,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Announcement routes
-  app.get('/api/announcements', isAuthenticated, async (req, res) => {
+  app.get('/api/announcements', isAdminAuthenticated, async (req, res) => {
     try {
       const { sponsorId } = req.query;
       let announcements;
@@ -341,7 +322,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/announcements', isAuthenticated, async (req: any, res) => {
+  app.post('/api/announcements', isAdminAuthenticated, async (req: any, res) => {
     try {
       const validatedData = insertAnnouncementSchema.parse(req.body);
       const announcement = await storage.createAnnouncement(validatedData);
@@ -353,7 +334,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Statistics routes
-  app.get('/api/statistics', isAuthenticated, async (req, res) => {
+  app.get('/api/statistics', isAdminAuthenticated, async (req, res) => {
     try {
       const statistics = await storage.getStatistics();
       res.json(statistics);
