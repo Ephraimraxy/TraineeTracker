@@ -69,8 +69,8 @@ export default function AdminSidebar({ activeSection, onSectionChange }: AdminSi
     <div className="w-64 bg-white shadow-lg h-screen">
       <div className="p-6 border-b">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-            <Shield className="h-6 w-6 text-white" />
+          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1">
+            <img src="/logo.png" alt="CSS FARMS Logo" className="h-8 w-auto object-contain" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-gray-800">Admin Panel</h2>

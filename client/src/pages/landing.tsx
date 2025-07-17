@@ -33,14 +33,14 @@ export default function Landing() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="bg-green-600 p-2 rounded-xl">
-                <Sprout className="h-8 w-8 text-white" />
+                <img src="/logo.png" alt="CSS FARMS Logo" className="h-8 w-auto" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">CSS FARMS Nigeria</h1>
                 <p className="text-sm text-gray-600">Agricultural Training Excellence</p>
               </div>
             </div>
-            
+
             {/* Header Actions */}
             <div className="flex items-center space-x-4">
               <Button
@@ -64,12 +64,12 @@ export default function Landing() {
               <Award className="mr-2 h-4 w-4" />
               Nigeria's Leading Agricultural Training Platform
             </div>
-            
+
             <h2 className="text-5xl md:text-7xl font-bold text-gray-800 mb-8 leading-tight">
               Transform Your
               <span className="text-green-600 block">Agricultural Future</span>
             </h2>
-            
+
             <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed">
               Join our comprehensive training program and become part of Nigeria's agricultural revolution
             </p>
@@ -89,7 +89,7 @@ export default function Landing() {
                     <p className="text-gray-600">Start your agricultural journey</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-4 mb-8">
                   <div className="flex items-center text-gray-600">
                     <Video className="h-4 w-4 mr-2 text-green-600" />
@@ -114,7 +114,7 @@ export default function Landing() {
                   >
                     {isRegistrationEnabled ? "Register Now" : "Registration Closed"}
                   </Button>
-                  
+
                   <Button
                     onClick={() => setShowLogin(true)}
                     variant="outline"
@@ -153,7 +153,7 @@ export default function Landing() {
                     <p className="text-gray-600">What you'll gain from our training</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-6">
                   <div className="flex items-start space-x-3">
                     <div className="bg-green-100 p-2 rounded-full">
@@ -164,7 +164,7 @@ export default function Landing() {
                       <p className="text-sm text-gray-600">Learn from industry professionals with years of experience</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start space-x-3">
                     <div className="bg-blue-100 p-2 rounded-full">
                       <Award className="h-5 w-5 text-blue-600" />
@@ -174,7 +174,7 @@ export default function Landing() {
                       <p className="text-sm text-gray-600">Receive recognized certificates upon completion</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start space-x-3">
                     <div className="bg-purple-100 p-2 rounded-full">
                       <Users className="h-5 w-5 text-purple-600" />

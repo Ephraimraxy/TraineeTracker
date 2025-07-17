@@ -65,6 +65,11 @@ export default function AdminLogin() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <div className="text-center mb-8">
+            <div className="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center mb-4 border-2 border-green-600">
+              <img src="/logo.png" alt="CSS FARMS Logo" className="h-10 w-auto object-contain" />
+            </div>
+          </div>
           <CardTitle className="text-2xl font-bold text-green-800">Admin Login</CardTitle>
           <CardDescription>
             Access the CSS FARMS Nigeria admin dashboard
