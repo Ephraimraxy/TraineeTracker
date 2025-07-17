@@ -1,24 +1,20 @@
+
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { 
   BarChart3, 
-  Building, 
   Users, 
+  Building, 
   BookOpen, 
+  Bell, 
   Settings, 
-  Mail, 
-  PieChart 
+  LogOut,
+  Upload,
+  MessageSquare,
+  FileText,
+  Calendar,
+  Shield
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-const sidebarItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-  { id: 'sponsors', label: 'Sponsors', icon: Building },
-  { id: 'trainees', label: 'Trainees', icon: Users },
-  { id: 'content', label: 'Content', icon: BookOpen },
-  { id: 'settings', label: 'Settings', icon: Settings },
-  { id: 'messages', label: 'Messages', icon: Mail },
-  { id: 'reports', label: 'Reports', icon: PieChart },
-];
 
 interface AdminSidebarProps {
   activeSection: string;
@@ -26,32 +22,102 @@ interface AdminSidebarProps {
 }
 
 export default function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarProps) {
+  const sidebarItems = [
+    { 
+      id: "dashboard", 
+      label: "Dashboard", 
+      icon: BarChart3, 
+      description: "System overview and stats"
+    },
+    { 
+      id: "sponsors", 
+      label: "Sponsors", 
+      icon: Building, 
+      description: "Manage training sponsors"
+    },
+    { 
+      id: "trainees", 
+      label: "Trainees", 
+      icon: Users, 
+      description: "View and manage trainees"
+    },
+    { 
+      id: "content", 
+      label: "Content", 
+      icon: BookOpen, 
+      description: "Upload training materials"
+    },
+    { 
+      id: "announcements", 
+      label: "Announcements", 
+      icon: Bell, 
+      description: "Send messages to trainees"
+    },
+    { 
+      id: "settings", 
+      label: "Settings", 
+      icon: Settings, 
+      description: "System configuration"
+    }
+  ];
+
+  const handleLogout = () => {
+    window.location.href = "/api/admin/logout";
+  };
+
   return (
-    <aside className="w-64 bg-white shadow-sm h-screen sticky top-0">
-      <nav className="p-4">
-        <ul className="space-y-2">
+    <div className="w-64 bg-white shadow-lg h-screen">
+      <div className="p-6 border-b">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+            <Shield className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-800">Admin Panel</h2>
+            <p className="text-sm text-gray-600">CSS FARMS Nigeria</p>
+          </div>
+        </div>
+      </div>
+
+      <nav className="mt-6">
+        <div className="px-4 space-y-2">
           {sidebarItems.map((item) => {
             const Icon = item.icon;
             return (
-              <li key={item.id}>
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start space-x-3 h-12",
-                    activeSection === item.id 
-                      ? "bg-[hsl(var(--primary))] text-white hover:bg-[hsl(var(--primary-dark))]" 
-                      : "text-gray-700 hover:bg-gray-100"
-                  )}
-                  onClick={() => onSectionChange(item.id)}
-                >
-                  <Icon className="h-5 w-5" />
-                  <span>{item.label}</span>
-                </Button>
-              </li>
+              <Button
+                key={item.id}
+                variant={activeSection === item.id ? "default" : "ghost"}
+                className={cn(
+                  "w-full justify-start text-left h-auto p-3",
+                  activeSection === item.id
+                    ? "bg-green-600 text-white hover:bg-green-700"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                )}
+                onClick={() => onSectionChange(item.id)}
+              >
+                <div className="flex items-center space-x-3">
+                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{item.label}</p>
+                    <p className="text-xs opacity-75 truncate">{item.description}</p>
+                  </div>
+                </div>
+              </Button>
             );
           })}
-        </ul>
+        </div>
       </nav>
-    </aside>
+
+      <div className="absolute bottom-0 w-64 p-4 border-t bg-gray-50">
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+          onClick={handleLogout}
+        >
+          <LogOut className="h-5 w-5 mr-3" />
+          Logout
+        </Button>
+      </div>
+    </div>
   );
 }

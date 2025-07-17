@@ -59,13 +59,13 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      
+
       <div className="flex">
         <AdminSidebar 
           activeSection={activeSection}
           onSectionChange={setActiveSection}
         />
-        
+
         {/* Main Content */}
         <main className="flex-1 p-6">
           {/* Dashboard Overview */}

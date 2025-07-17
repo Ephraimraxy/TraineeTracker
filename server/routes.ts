@@ -65,7 +65,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check for admin token first
       const adminToken = req.cookies?.adminToken;
       if (adminToken) {
-        const adminSession = require('./adminAuth').verifyAdminSession(adminToken);
+        const { verifyAdminSession } = await import('./adminAuth');
+        const adminSession = verifyAdminSession(adminToken);
         if (adminSession) {
           const user = await storage.getUser("admin-default");
           if (user) {
@@ -145,6 +146,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating sponsor:", error);
       res.status(500).json({ message: "Failed to update sponsor" });
+    }
+  });
+
+  app.delete('/api/sponsors/:id', isAdminAuthenticated, async (req: any, res) => {
+    try {
+      const id = req.params.id;
+      await storage.deleteSponsor(id);
+      res.json({ message: "Sponsor deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting sponsor:", error);
+      res.status(500).json({ message: "Failed to delete sponsor" });
     }
   });
 
