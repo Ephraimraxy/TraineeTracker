@@ -34,6 +34,7 @@ interface RegistrationModalProps {
 export default function RegistrationModal({ isOpen, onClose }: RegistrationModalProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
   const { toast } = useToast();
 
   // Reset to first step when modal opens
@@ -41,6 +42,7 @@ export default function RegistrationModal({ isOpen, onClose }: RegistrationModal
     if (isOpen) {
       setCurrentStep(1);
       setIsSubmitting(false);
+      setShowEmailVerification(false);
     }
   }, [isOpen]);
 
@@ -56,7 +58,7 @@ export default function RegistrationModal({ isOpen, onClose }: RegistrationModal
   });
 
   const onSubmit = async (data: RegistrationFormData) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       // Create user with Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
@@ -88,7 +90,7 @@ export default function RegistrationModal({ isOpen, onClose }: RegistrationModal
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -231,9 +233,9 @@ export default function RegistrationModal({ isOpen, onClose }: RegistrationModal
             <Button 
               type="submit" 
               className="w-full bg-green-600 hover:bg-green-700"
-              disabled={isLoading}
+              disabled={isSubmitting}
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating Account...
