@@ -6,6 +6,7 @@ import { authenticateAdmin, isAdminAuthenticated, destroyAdminSession } from "./
 import { insertSponsorSchema, insertTraineeSchema, insertContentSchema, insertAnnouncementSchema } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
+import { sendVerificationEmail } from "./emailService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware disabled for now since we're using Firebase and admin auth
@@ -204,14 +205,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const verificationCode = crypto.randomInt(100000, 999999).toString();
       const verificationCodeExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-      // TODO: Send verification email
-      console.log(`Verification code for ${email}: ${verificationCode}`);
+      // Store verification code temporarily (you might want to use Redis or database for production)
+      // For now, we'll store it in memory with expiry
+      global.verificationCodes = global.verificationCodes || {};
+      global.verificationCodes[email] = {
+        code: verificationCode,
+        expiry: verificationCodeExpiry
+      };
+
+      // Send verification email
+      const emailSent = await sendVerificationEmail(email, verificationCode);
+      
+      if (!emailSent) {
+        return res.status(500).json({ message: "Failed to send verification email. Please try again." });
+      }
+
+      console.log(`Verification code for ${email}: ${verificationCode}`); // Keep for debugging
 
       res.json({ 
-        message: "Verification code sent to email",
-        email,
-        // In production, don't send the code in response
-        verificationCode: verificationCode // Only for development
+        message: "Verification code sent to your email address",
+        email
       });
     } catch (error) {
       console.error("Error in registration step 1:", error);
@@ -223,13 +236,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email, code } = req.body;
       
-      // For now, we'll just validate the code exists
-      // In production, this would check against stored verification codes
-      if (code && code.length === 6) {
-        res.json({ message: "Email verified successfully" });
-      } else {
-        res.status(400).json({ message: "Invalid verification code" });
+      // Check stored verification codes
+      global.verificationCodes = global.verificationCodes || {};
+      const storedData = global.verificationCodes[email];
+      
+      if (!storedData) {
+        return res.status(400).json({ message: "No verification code found for this email" });
       }
+      
+      if (new Date() > storedData.expiry) {
+        // Clean up expired code
+        delete global.verificationCodes[email];
+        return res.status(400).json({ message: "Verification code has expired" });
+      }
+      
+      if (storedData.code !== code) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+      
+      // Clean up used code
+      delete global.verificationCodes[email];
+      
+      res.json({ message: "Email verified successfully" });
     } catch (error) {
       console.error("Error in email verification:", error);
       res.status(500).json({ message: "Verification failed" });
