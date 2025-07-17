@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { authenticateAdmin, isAdminAuthenticated, destroyAdminSession } from "./adminAuth";
 import { insertSponsorSchema, insertTraineeSchema, insertContentSchema, insertAnnouncementSchema } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
@@ -10,9 +11,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
-  // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  // Admin authentication routes
+  app.post('/api/admin/login', async (req, res) => {
     try {
+      const { email, password } = req.body;
+      
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password are required" });
+      }
+      
+      const sessionToken = await authenticateAdmin(email, password);
+      
+      if (!sessionToken) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      // Set secure cookie
+      res.cookie('adminToken', sessionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        sameSite: 'strict'
+      });
+      
+      res.json({ 
+        message: "Login successful", 
+        user: { 
+          id: "admin-default",
+          email: email,
+          firstName: "Admin",
+          lastName: "User",
+          role: "admin"
+        }
+      });
+    } catch (error) {
+      console.error("Admin login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post('/api/admin/logout', (req, res) => {
+    const token = req.cookies?.adminToken;
+    if (token) {
+      destroyAdminSession(token);
+      res.clearCookie('adminToken');
+    }
+    res.json({ message: "Logout successful" });
+  });
+
+  // Combined auth route that handles both Replit Auth and Admin Auth
+  app.get('/api/auth/user', async (req: any, res) => {
+    try {
+      // Check for admin token first
+      const adminToken = req.cookies?.adminToken;
+      if (adminToken) {
+        const adminSession = require('./adminAuth').verifyAdminSession(adminToken);
+        if (adminSession) {
+          const user = await storage.getUser("admin-default");
+          if (user) {
+            return res.json(user);
+          }
+        }
+      }
+      
+      // Fall back to Replit Auth
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
       if (!user) {

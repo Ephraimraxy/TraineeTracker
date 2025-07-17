@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import RegistrationModal from "@/components/registration-modal";
 import LoginModal from "@/components/login-modal";
 
 export default function Landing() {
+  const [, navigate] = useLocation();
   const [showRegistration, setShowRegistration] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
 
@@ -70,6 +72,17 @@ export default function Landing() {
             >
               <BookOpen className="mr-2 h-5 w-5" />
               Login
+            </Button>
+          </div>
+
+          {/* Admin Login Link */}
+          <div className="mt-6">
+            <Button
+              onClick={() => navigate("/admin-login")}
+              variant="link"
+              className="text-white hover:text-[hsl(var(--secondary))] underline text-sm"
+            >
+              Admin Login
             </Button>
           </div>
           

@@ -10,6 +10,7 @@ import Home from "@/pages/home";
 import Register from "@/pages/register";
 import TraineeDashboard from "@/pages/trainee-dashboard";
 import AdminDashboard from "@/pages/admin-dashboard";
+import AdminLogin from "@/pages/admin-login";
 
 function Router() {
   const { isAuthenticated, isLoading, user } = useAuth();
@@ -31,6 +32,7 @@ function Router() {
         <>
           <Route path="/" component={Landing} />
           <Route path="/register" component={Register} />
+          <Route path="/admin-login" component={AdminLogin} />
         </>
       ) : (
         <>
