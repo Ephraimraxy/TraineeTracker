@@ -21,6 +21,17 @@ export async function initializeFirebase() {
       updatedAt: new Date(),
     });
 
+    // Create admin user
+    await setDoc(doc(db, 'users', 'admin-default'), {
+      id: 'admin-default',
+      email: 'hoseaephraim50@gmail.com',
+      firstName: 'Admin',
+      lastName: 'User',
+      role: 'admin',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
     console.log('Firebase collections initialized successfully');
   } catch (error) {
     console.error('Error initializing Firebase:', error);
