@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -10,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Mail, CheckCircle, UserPlus } from "lucide-react";
+import { Loader2, Mail, CheckCircle, UserPlus, ArrowRight, ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const registrationSchema = z.object({
@@ -43,6 +44,7 @@ export default function RegistrationModal({ isOpen, onClose }: RegistrationModal
       setCurrentStep(1);
       setIsSubmitting(false);
       setShowEmailVerification(false);
+      form.reset();
     }
   }, [isOpen]);
 
@@ -112,6 +114,22 @@ export default function RegistrationModal({ isOpen, onClose }: RegistrationModal
     }
   };
 
+  const nextStep = async () => {
+    if (currentStep === 1) {
+      const isValid = await form.trigger(["firstName", "lastName"]);
+      if (isValid) setCurrentStep(2);
+    } else if (currentStep === 2) {
+      const isValid = await form.trigger(["email"]);
+      if (isValid) setCurrentStep(3);
+    }
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
   if (showEmailVerification) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
@@ -156,94 +174,158 @@ export default function RegistrationModal({ isOpen, onClose }: RegistrationModal
             <UserPlus className="h-5 w-5 text-green-600" />
             Register for CSS FARMS Training
           </DialogTitle>
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-500">Step {currentStep} of 3</div>
+            <div className="flex space-x-2">
+              {[1, 2, 3].map((step) => (
+                <div
+                  key={step}
+                  className={`w-3 h-3 rounded-full ${
+                    step <= currentStep ? 'bg-green-600' : 'bg-gray-300'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
         </DialogHeader>
+        
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="firstName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>First Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="John" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="lastName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Last Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            {/* Step 1: Personal Information */}
+            {currentStep === 1 && (
+              <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <h3 className="font-semibold">Personal Information</h3>
+                  <p className="text-sm text-gray-600">Tell us about yourself</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>First Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="John" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Doe" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="john@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <div className="flex justify-end mt-6">
+                  <Button type="button" onClick={nextStep} className="bg-green-600 hover:bg-green-700">
+                    Next <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
 
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Step 2: Email */}
+            {currentStep === 2 && (
+              <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <h3 className="font-semibold">Email Address</h3>
+                  <p className="text-sm text-gray-600">We'll use this to send you course updates</p>
+                </div>
 
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="********" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="john@example.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <Button 
-              type="submit" 
-              className="w-full bg-green-600 hover:bg-green-700"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Account...
-                </>
-              ) : (
-                "Create Account"
-              )}
-            </Button>
+                <div className="flex justify-between mt-6">
+                  <Button type="button" variant="outline" onClick={prevStep}>
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                  </Button>
+                  <Button type="button" onClick={nextStep} className="bg-green-600 hover:bg-green-700">
+                    Next <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Password */}
+            {currentStep === 3 && (
+              <div className="space-y-4">
+                <div className="text-center mb-4">
+                  <h3 className="font-semibold">Create Password</h3>
+                  <p className="text-sm text-gray-600">Choose a strong password for your account</p>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="********" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="********" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-between mt-6">
+                  <Button type="button" variant="outline" onClick={prevStep}>
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    className="bg-green-600 hover:bg-green-700"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating Account...
+                      </>
+                    ) : (
+                      "Create Account"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
           </form>
         </Form>
       </DialogContent>
