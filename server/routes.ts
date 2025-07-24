@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 // import { setupAuth, isAdminAuthenticated } from "./replitAuth";
-import { authenticateAdmin, isAdminAuthenticated, destroyAdminSession } from "./adminAuth";
+import { authenticateAdmin, isAdminAuthenticated, destroyAdminSession, verifyAdminSession } from "./adminAuth";
 import { insertSponsorSchema, insertTraineeSchema, insertContentSchema, insertAnnouncementSchema } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
@@ -35,7 +35,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxAge: 24 * 60 * 60 * 1000 // 24 hours
       });
 
-      const { verifyAdminSession } = await import('./adminAuth');
       const adminSession = verifyAdminSession(sessionToken);
       res.json({
         message: "Login successful",
@@ -59,7 +58,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ message: "Not authenticated" });
     }
 
-    const { verifyAdminSession } = require('./adminAuth');
+    // verifyAdminSession has already been imported at the top of the file using ESM import style
+// so we can call it directly to ensure the same module instance is used
+
     const session = verifyAdminSession(token);
     if (!session) {
       return res.status(401).json({ message: "Session expired" });
@@ -109,7 +110,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check for admin token first
       const adminToken = req.cookies?.adminToken;
       if (adminToken) {
-        const { verifyAdminSession } = await import('./adminAuth');
         const adminSession = verifyAdminSession(adminToken);
         if (adminSession) {
           const user = await storage.getUser("admin-default");
@@ -340,7 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Content routes
-  app.get('/api/content', isAdminAuthenticated, async (req, res) => {
+  app.get('/api/content', async (req, res) => {
     try {
       const { sponsorId } = req.query;
       let content;
@@ -393,7 +393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Announcement routes
-  app.get('/api/announcements', isAdminAuthenticated, async (req, res) => {
+  app.get('/api/announcements', async (req, res) => {
     try {
       const { sponsorId } = req.query;
       let announcements;

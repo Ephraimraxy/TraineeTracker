@@ -5,20 +5,32 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sprout, Video, ClipboardCheck, TrendingUp, Users, BookOpen, Award } from "lucide-react";
-import RegistrationModal from "@/components/registration-modal";
+import RegistrationWizard from "@/components/registration-wizard";
 import LoginModal from "@/components/login-modal";
+
+// ---------- Types ----------
+interface Setting {
+  value: string;
+}
+
+interface Sponsor {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 
 export default function Landing() {
   const [, navigate] = useLocation();
   const [showRegistration, setShowRegistration] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
 
-  const { data: registrationEnabled } = useQuery({
+  const { data: registrationEnabled } = useQuery<Setting>({
     queryKey: ["/api/settings/registration_enabled"],
     retry: false,
   });
 
-  const { data: activeSponsor } = useQuery({
+  const { data: activeSponsor } = useQuery<Sponsor | undefined>({
     queryKey: ["/api/sponsors/active"],
     retry: false,
   });
@@ -205,7 +217,7 @@ export default function Landing() {
       </footer>
 
       {/* Modals */}
-      <RegistrationModal
+      <RegistrationWizard
         isOpen={showRegistration}
         onClose={() => setShowRegistration(false)}
       />

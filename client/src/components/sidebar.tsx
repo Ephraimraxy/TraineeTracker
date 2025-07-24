@@ -7,13 +7,15 @@ import {
   Upload, 
   Megaphone, 
   TrendingUp, 
-  Headphones 
+  Headphones,
+  BookOpen 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sidebarItems = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
   { id: 'videos', label: 'Training Videos', icon: Video },
+  { id: 'materials', label: 'Lecture Materials', icon: BookOpen },
   { id: 'quizzes', label: 'Quizzes & Tests', icon: ClipboardCheck },
   { id: 'assignments', label: 'Assignments', icon: Upload },
   { id: 'announcements', label: 'Announcements', icon: Megaphone },
@@ -37,8 +39,8 @@ export default function Sidebar() {
                   className={cn(
                     "w-full justify-start space-x-3 h-12",
                     activeItem === item.id 
-                      ? "bg-[hsl(var(--primary))] text-white hover:bg-[hsl(var(--primary-dark))]" 
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-green-600 text-white hover:bg-green-700" 
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                   )}
                   onClick={() => setActiveItem(item.id)}
                 >

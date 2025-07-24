@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ interface LoginModalProps {
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [, setLocation] = useLocation();
   const [rememberMe, setRememberMe] = useState(false);
   const { toast } = useToast();
 
@@ -47,10 +49,8 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       if (!userCredential.user.emailVerified) {
         toast({
           title: "Email not verified",
-          description: "Please verify your email before logging in.",
-          variant: "destructive",
+          description: "You can still proceed, but some features may be limited.",
         });
-        return;
       }
 
       toast({
@@ -58,6 +58,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         description: "Welcome back to CSS FARMS Training System.",
       });
       onClose();
+      setLocation("/trainee-dashboard");
     } catch (error: any) {
       toast({
         title: "Login failed",
@@ -113,7 +114,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 <Checkbox 
                   id="remember" 
                   checked={rememberMe}
-                  onCheckedChange={setRememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked === true)}
                 />
                 <Label htmlFor="remember" className="text-sm text-gray-600">
                   Remember me

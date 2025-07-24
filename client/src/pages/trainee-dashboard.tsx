@@ -1,5 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
+import { useAnnouncements } from "@/hooks/useAnnouncements";
+import { useContent } from "@/hooks/useContent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,43 +25,37 @@ import Sidebar from "@/components/sidebar";
 export default function TraineeDashboard() {
   const { user } = useAuth();
 
-  const { data: announcements } = useQuery({
-    queryKey: ["/api/announcements"],
-    enabled: !!user?.trainee?.sponsorId,
+    const { data: announcements } = useAnnouncements((user as any)?.trainee?.sponsorId);
+
+    const { data: content } = useContent((user as any)?.trainee?.sponsorId);
+
+  const { data: progress } = useQuery<any[]>({
+    queryKey: ["/api/progress", (user as any)?.trainee?.id],
+    enabled: !!(user as any)?.trainee?.id,
   });
 
-  const { data: content } = useQuery({
-    queryKey: ["/api/content"],
-    enabled: !!user?.trainee?.sponsorId,
-  });
-
-  const { data: progress } = useQuery({
-    queryKey: ["/api/progress", user?.trainee?.id],
-    enabled: !!user?.trainee?.id,
-  });
-
-  if (!user?.trainee) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="w-full max-w-md mx-4">
-          <CardContent className="pt-6">
-            <div className="text-center">
-              <p className="text-gray-600">No trainee profile found</p>
-              <Button 
-                onClick={() => window.location.href = "/api/logout"}
-                className="mt-4"
-              >
-                Logout
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!user) {
+    return null;
   }
 
-  const trainee = user.trainee;
-  const sponsor = user.sponsor;
+  // Fallback trainee object when backend profile is not yet created
+  const fallbackTrainee = {
+    firstName: user.displayName?.split(" ")[0] || "",
+    lastName: user.displayName?.split(" ").slice(1).join(" ") || "",
+    traineeId: "N/A",
+    tagNumber: "N/A",
+    roomNumber: "-",
+    lectureVenue: "-",
+  } as const;
+
+  const traineeObj = (user as any).trainee ?? fallbackTrainee;
+
+  const sponsorObj = (user as any).sponsor;
+
+
+
+  const trainee = traineeObj;
+  const sponsor = sponsorObj;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -180,8 +176,8 @@ export default function TraineeDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {progress && progress.length > 0 ? (
-                  progress.slice(0, 5).map((item, index) => (
+                {Array.isArray(progress) && progress.length > 0 ? (
+                  (progress as any[]).slice(0, 5).map((item: any, index: number) => (
                     <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
                       <div className="w-10 h-10 bg-[hsl(var(--success))] rounded-full flex items-center justify-center">
                         <CheckCircle className="h-5 w-5 text-white" />

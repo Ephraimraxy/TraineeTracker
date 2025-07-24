@@ -1,7 +1,23 @@
 import { useState } from "react";
+
+// ---------- Types ----------
+interface Statistics {
+  totalTrainees: number;
+  activeSponsors: number;
+  completedCourses: number;
+  activeContent: number;
+}
+
+import type { Trainee, Sponsor } from "@shared/schema";
+
+
+
+
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import AdminSidebar from "@/components/admin-sidebar";
+import AdminContent from "@/components/admin-content";
 import Header from "@/components/header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,27 +44,27 @@ export default function AdminDashboard() {
     retry: false,
   });
 
-  const { data: registrationEnabled } = useQuery({
+  const { data: registrationEnabled } = useQuery<{ value: string } | undefined>({
     queryKey: ["/api/settings/registration_enabled"],
     retry: false,
   });
 
-  const { data: sponsors } = useQuery({
+  const { data: sponsors } = useQuery<Sponsor[]>({
     queryKey: ["/api/sponsors"],
     retry: false,
   });
 
-  const { data: activeSponsor } = useQuery({
+  const { data: activeSponsor } = useQuery<Sponsor | undefined>({
     queryKey: ["/api/sponsors/active"],
     retry: false,
   });
 
-  const { data: statistics } = useQuery({
+  const { data: statistics } = useQuery<Statistics>({
     queryKey: ["/api/statistics"],
     retry: false,
   });
 
-  const { data: trainees } = useQuery({
+  const { data: trainees } = useQuery<Trainee[]>({
     queryKey: ["/api/trainees"],
     retry: false,
   });
@@ -114,9 +130,7 @@ export default function AdminDashboard() {
     setActiveSection(section);
   };
 
-  const handleRegistrationToggle = () => {
-    setShowRegistrationModal(true);
-  };
+
 
   const handleRegistrationSubmit = (enabled: boolean, sponsorId?: string) => {
     registrationToggleMutation.mutate({ enabled, sponsorId });
@@ -124,14 +138,13 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header variant="admin" />
 
       <div className="flex">
         <AdminSidebar 
         activeSection={activeSection} 
         onSectionChange={handleSectionChange}
-        onRegistrationToggle={handleRegistrationToggle}
-      />
+              />
 
         {/* Main Content */}
         <main className="flex-1 p-6">
@@ -345,6 +358,11 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             </div>
+          )}
+
+          {/* Content Section */}
+          {activeSection === "content" && (
+            <AdminContent />
           )}
 
           {/* Trainees Section */}

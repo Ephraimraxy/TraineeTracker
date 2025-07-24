@@ -13,7 +13,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import AdminLogin from "@/pages/admin-login";
 
 function Router() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -26,25 +26,6 @@ function Router() {
     );
   }
 
-  // Check if user's email is verified
-  if (isAuthenticated && user && !user.emailVerified) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg">
-          <h2 className="text-xl font-semibold mb-4">Email Verification Required</h2>
-          <p className="text-gray-600 mb-4">
-            Please verify your email address to continue using the system.
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
-          >
-            Refresh Page
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <Switch>

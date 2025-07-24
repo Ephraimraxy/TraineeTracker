@@ -40,6 +40,8 @@ export interface IStorage {
   createSponsor(sponsor: InsertSponsor): Promise<Sponsor>;
   updateSponsor(id: string, sponsor: Partial<InsertSponsor>): Promise<Sponsor>;
   getActiveSponsor(): Promise<Sponsor | undefined>;
+  deactivateAllSponsors(): Promise<void>;
+  deleteSponsor(id: string): Promise<void>;
   
   // Trainee operations
   getTrainees(): Promise<Trainee[]>;
@@ -177,6 +179,24 @@ export class DatabaseStorage implements IStorage {
       return this.convertTimestamps({ id: doc.id, ...doc.data() }) as Sponsor;
     }
     return undefined;
+  }
+
+  // Deactivate all sponsors (sets isActive=false on all documents)
+  async deactivateAllSponsors(): Promise<void> {
+    const snapshot = await getDocs(collection(db, 'sponsors'));
+    const now = new Date();
+    const updates = snapshot.docs.map((docSnap) =>
+      updateDoc(doc(db, 'sponsors', docSnap.id), {
+        isActive: false,
+        updatedAt: now,
+      })
+    );
+    await Promise.all(updates);
+  }
+
+  // Delete sponsor by id
+  async deleteSponsor(id: string): Promise<void> {
+    await deleteDoc(doc(db, 'sponsors', id));
   }
 
   // Trainee operations

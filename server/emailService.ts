@@ -11,6 +11,12 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendVerificationEmail(email: string, code: string): Promise<boolean> {
+  // If email credentials are not set, fall back to console log (development mode)
+  if (!process.env.EMAIL_USER || process.env.EMAIL_USER === 'your-email@gmail.com') {
+    console.warn('[DEV] No EMAIL_USER configured. Skipping real email send.');
+    console.info(`[DEV] Verification code for ${email}: ${code}`);
+    return true;
+  }
   try {
     const mailOptions = {
       from: process.env.EMAIL_USER || 'noreply@cssfarms.ng',

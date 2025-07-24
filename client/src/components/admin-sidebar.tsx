@@ -1,5 +1,7 @@
 
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { useRegistrationStatus, useToggleRegistration } from "@/hooks/useRegistrationStatus";
 import { Button } from "@/components/ui/button";
 import { 
   BarChart3, 
@@ -16,14 +18,20 @@ import {
   Shield,
   UserPlus
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface AdminSidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
-  onRegistrationToggle: () => void;
 }
 
-export default function AdminSidebar({ activeSection, onSectionChange, onRegistrationToggle }: AdminSidebarProps) {
+export default function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarProps) {
+      const [showConfirm, setShowConfirm] = useState(false);
+  const [showRegDialog, setShowRegDialog] = useState(false);
+  const { data: registrationSetting } = useRegistrationStatus();
+  const toggleReg = useToggleRegistration();
+  const registrationOpen = registrationSetting?.value === "true";
+
   const sidebarItems = [
     { 
       id: "dashboard", 
@@ -56,6 +64,12 @@ export default function AdminSidebar({ activeSection, onSectionChange, onRegistr
       description: "Send messages to trainees"
     },
     { 
+      id: "registration", 
+      label: "Registration", 
+      icon: UserPlus, 
+      description: "Start/Stop trainee registration"
+    },
+    { 
       id: "settings", 
       label: "Settings", 
       icon: Settings, 
@@ -63,9 +77,16 @@ export default function AdminSidebar({ activeSection, onSectionChange, onRegistr
     }
   ];
 
-  const handleLogout = () => {
+  const handleLogoutClick = () => {
+    setShowConfirm(true);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowConfirm(false);
     window.location.href = "/api/admin/logout";
   };
+
+  const handleCancel = () => setShowConfirm(false);
 
   return (
     <div className="w-64 bg-white shadow-lg h-screen">
@@ -95,7 +116,13 @@ export default function AdminSidebar({ activeSection, onSectionChange, onRegistr
                     ? "bg-green-600 text-white hover:bg-green-700"
                     : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
                 )}
-                onClick={() => onSectionChange(item.id)}
+                onClick={() => {
+                  if (item.id === "registration") {
+                    setShowRegDialog(true);
+                  } else {
+                    onSectionChange(item.id);
+                  }
+                }}
               >
                 <div className="flex items-center space-x-3">
                   <Icon className="h-5 w-5 flex-shrink-0" />
@@ -110,26 +137,53 @@ export default function AdminSidebar({ activeSection, onSectionChange, onRegistr
         </div>
       </nav>
 
-      <div className="absolute bottom-16 w-64 p-4 border-t bg-gray-50">
-        <Button
-          onClick={onRegistrationToggle}
-          className="w-full justify-start bg-blue-600 text-white hover:bg-blue-700"
-        >
-          <UserPlus className="h-5 w-5 mr-3" />
-          Toggle Registration
-        </Button>
-      </div>
+      {/* Registration Dialog */}
+      <Dialog open={showRegDialog} onOpenChange={setShowRegDialog}>
+        <DialogContent className="sm:max-w-sm animate-in zoom-in-95 fade-in-50">
+          <DialogHeader>
+            <DialogTitle className="text-center">
+              Registration Status
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 text-center">
+            <p className="text-lg font-semibold">
+              {registrationOpen ? "Registration is OPEN" : "Registration is CLOSED"}
+            </p>
+            <Button
+              className="w-full"
+              onClick={() => toggleReg.mutate(!registrationOpen)}
+              disabled={toggleReg.isLoading}
+            >
+              {registrationOpen ? "Stop Registration" : "Start Registration"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <div className="absolute bottom-0 w-64 p-4 border-t bg-gray-50">
         <Button
           variant="ghost"
           className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-          onClick={handleLogout}
+          onClick={handleLogoutClick}
         >
           <LogOut className="h-5 w-5 mr-3" />
           Logout
         </Button>
       </div>
+      <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
+        <DialogContent className="sm:max-w-sm animate-in zoom-in-95 fade-in-50">
+          <DialogHeader>
+            <DialogTitle className="text-center">
+              <img src="https://cssfarms.ng/wp-content/uploads/2024/12/scrnli_QWDQo0eIg5qH8M.png" alt="Logo" className="h-12 w-auto mx-auto mb-4 animate-bounce" />
+              Are you sure you want to logout?
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={handleCancel}>Cancel</Button>
+            <Button variant="destructive" onClick={handleConfirmLogout}>Logout</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
